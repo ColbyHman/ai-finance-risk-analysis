@@ -1,0 +1,12 @@
+".git
+node_modules
+**/node_modules
+.next
+**/.next
+apps/web/.next
+.env
+.env.*
+!.env.example
+*.log
+docs/screenshots
+.DS_Store
