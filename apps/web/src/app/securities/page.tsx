@@ -32,7 +32,12 @@ export default function SecuritiesIndexPage() {
           <p className="mt-1 max-w-3xl text-sm text-slate-600">
             Each security below has an AI-assisted risk read-out: a score,
             model confidence, and the signals driving it — see each
-            security's page for the full detail and 30-day trend.
+            security&apos;s page for the full detail and 30-day trend. For how
+            these holdings overlap as a whole, see{" "}
+            <Link href="/diversification" className="text-blue-600 hover:underline">
+              Diversification Risk
+            </Link>
+            .
           </p>
         </div>
 

@@ -54,7 +54,7 @@ export function RiskTrendChart() {
         Risk Score &amp; VaR Trend (30d)
       </h3>
       <p className="mt-1 text-xs text-slate-500">
-        AI-modeled portfolio risk score vs. 1-day 95% Value at Risk ($M)
+        AI-modeled portfolio risk score vs. 1-day 95% Value at Risk ($K)
       </p>
       <div className="mt-4 h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -78,7 +78,7 @@ export function RiskTrendChart() {
               yAxisId="right"
               type="monotone"
               dataKey="var95"
-              name="VaR 95% ($M)"
+              name="VaR 95% ($K)"
               stroke="#dc2626"
               strokeWidth={2}
               dot={{ r: 3 }}
