@@ -168,6 +168,27 @@ export default function Home() {
           </div>
         </section>
 
+        <section className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900">
+                What should I do? Suggested actions available
+              </h3>
+              <p className="mt-1 max-w-2xl text-sm text-slate-600">
+                Three concrete, single-lever changes — each with a before/after on tech
+                exposure and on the pessimistic-case outcome at retirement — plus what fees
+                quietly cost over 40 years.
+              </p>
+            </div>
+            <Link
+              href="/actions"
+              className="shrink-0 text-sm font-medium text-blue-600 hover:text-blue-700"
+            >
+              See suggested actions →
+            </Link>
+          </div>
+        </section>
+
         <section>
           <p className="mb-2 text-xs font-medium text-slate-400">
             Secondary metrics — short-horizon risk indicators, less relevant at a 40-year horizon
@@ -183,7 +204,9 @@ export default function Home() {
 
       <footer className="mx-auto max-w-7xl px-6 pb-8 text-xs text-slate-400">
         POC dashboard · all figures are synthetic mock data · no live backend
-        or data pipeline is wired up (see docs/adr).
+        or data pipeline is wired up · every modeling assumption behind the
+        retirement projection, scenarios, and suggested actions is documented
+        in docs/adr/0009-retirement-persona-and-projection.md.
       </footer>
     </div>
   );

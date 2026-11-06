@@ -154,6 +154,85 @@ export const preRetireeComparison: ComparisonPersona = {
   label: "Hypothetical 58-year-old pre-retiree",
 };
 
+export interface SuggestedAction {
+  id: string;
+  title: string;
+  rationale: string;
+  techExposureBeforePct: number;
+  techExposureAfterPct: number;
+  /** 10th-percentile (pessimistic) projected balance at retirement,
+   * before and after — same Monte Carlo engine as /retirement, run
+   * with the adjusted allocation's own blended return/volatility (or
+   * adjusted contribution, for the contribution-bump action). Figures
+   * below are pre-computed, not live-recalculated in the UI — see
+   * docs/adr/0009 for the exact assumption changes behind each one. */
+  p10Before: number;
+  p10After: number;
+  caveat?: string;
+}
+
+// Each action changes exactly one lever so its effect is attributable.
+// Allocation-change actions recompute the portfolio's blended return
+// and volatility from assetClassAssumptions using the same methodology
+// as portfolioAssumptions (naive weighted average, scaled down by the
+// same diversification discount factor derived from the baseline) -
+// see docs/adr/0009 for the worked arithmetic.
+export const suggestedActions: SuggestedAction[] = [
+  {
+    id: "trim-nvda",
+    title: "Trim NVDA from 10% to 5%, move the other 5% into VXUS",
+    rationale:
+      "The single biggest lever on tail risk: NVDA alone is the most volatile holding in the portfolio. Halving it and redirecting into an already-held, much more diversified fund lowers both the single-stock concentration flag and the portfolio's overall volatility — without reducing expected return (international and US equity carry a similar long-run return assumption here).",
+    techExposureBeforePct: 41,
+    techExposureAfterPct: 36,
+    p10Before: 433556,
+    p10After: 452944,
+  },
+  {
+    id: "raise-international",
+    title: "Raise international allocation: trim VTI 30% → 25%, VXUS 15% → 20%",
+    rationale:
+      "Brings international allocation closer to the commonly-cited 20-30% guideline without touching the individual stock positions. The effect on this page's projection is small — by design, this simplified model uses one blended volatility for the whole portfolio and can't fully credit the diversification benefit of holding assets that don't move in lockstep with the US market. In practice this action's main benefit (reducing US-market concentration risk) is understated here, not absent.",
+    techExposureBeforePct: 41,
+    techExposureAfterPct: 40,
+    p10Before: 433556,
+    p10After: 427303,
+    caveat:
+      "This model can't fully capture cross-market diversification benefit — treat this one as directionally sound but understated by the projection.",
+  },
+  {
+    id: "raise-contribution",
+    title: "Raise monthly contribution from $600 to $750 (+$150/mo)",
+    rationale:
+      "Doesn't touch the allocation or its risk profile at all — pure savings-rate lever. Of the three actions here, this one moves the 10th-percentile (pessimistic-case) outcome the most, because it compounds for 40 years regardless of which years are good or bad.",
+    techExposureBeforePct: 41,
+    techExposureAfterPct: 41,
+    p10Before: 433556,
+    p10After: 531509,
+  },
+];
+
+export interface FeeDragProjection {
+  years: number;
+  blendedExpenseRatioPct: number;
+  withoutFees: number;
+  withFees: number;
+  cost: number;
+}
+
+// Deterministic (median-path growth rate, not a second Monte Carlo) -
+// see projection.ts's feeDragOverHorizon. This portfolio's blended
+// expense ratio is low (index funds here are all sub-0.1%, individual
+// stocks and cash carry none) — the point isn't that these specific
+// funds are expensive, it's that even a genuinely low-cost portfolio
+// loses real money to fees once compounded over 40 years.
+export const feeDragProjection: FeeDragProjection = {
+  years: 40,
+  blendedExpenseRatioPct: 0.027,
+  withoutFees: 1217216,
+  withFees: 1208262,
+  cost: 8954,
+};
 
 export interface SummaryMetric {
   label: string;
