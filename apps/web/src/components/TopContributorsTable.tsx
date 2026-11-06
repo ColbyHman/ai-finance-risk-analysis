@@ -1,13 +1,24 @@
+import Link from "next/link";
 import { topRiskContributors } from "@/lib/mock-data";
 import { RiskBadge } from "./RiskBadge";
 
 export function TopContributorsTable() {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h3 className="text-sm font-semibold text-slate-900">Top Risk Contributors</h3>
-      <p className="mt-1 text-xs text-slate-500">
-        Positions ranked by AI-modeled contribution to portfolio risk
-      </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900">Top Risk Contributors</h3>
+          <p className="mt-1 text-xs text-slate-500">
+            Positions ranked by AI-modeled contribution to portfolio risk
+          </p>
+        </div>
+        <Link
+          href="/securities"
+          className="text-xs font-medium text-blue-600 hover:text-blue-700"
+        >
+          Compare vs. traditional research →
+        </Link>
+      </div>
       <div className="mt-4 overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead>
@@ -22,8 +33,12 @@ export function TopContributorsTable() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {topRiskContributors.map((row) => (
-              <tr key={row.name}>
-                <td className="py-3 pr-4 font-medium text-slate-900">{row.name}</td>
+              <tr key={row.ticker}>
+                <td className="py-3 pr-4 font-medium text-slate-900">
+                  <Link href={`/securities/${row.ticker}`} className="text-blue-600 hover:underline">
+                    {row.name}
+                  </Link>
+                </td>
                 <td className="py-3 pr-4 text-slate-600">{row.assetClass}</td>
                 <td className="py-3 pr-4 text-slate-600">{row.exposure}</td>
                 <td className="py-3 pr-4 text-slate-600">{row.riskScore}</td>
