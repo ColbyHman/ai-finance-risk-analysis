@@ -22,13 +22,13 @@ Above-the-fold viewport:
 
 ![Dashboard — viewport](docs/screenshots/dashboard-viewport.png)
 
-Per-security comparison — every position ranked by AI risk score, with how
-AI-assisted analysis compares to traditional research:
+Per-security view — every position ranked by AI risk score, with
+model confidence:
 
 ![Securities — list](docs/screenshots/securities-list.png)
 
-One security in depth — AI-assisted read-out and traditional research
-side by side, with the verdict on where they agree or diverge:
+One security in depth — AI-assisted risk read-out, the signals
+driving it, and a 30-day trend:
 
 ![Security — detail](docs/screenshots/security-detail.png)
 
@@ -41,8 +41,8 @@ ai-finance-risk-analysis/
 │       └── src/
 │           ├── app/              # page.tsx, layout.tsx, securities/
 │           ├── components/       # SummaryCard, RiskCharts, TopContributorsTable,
-│           │                     # AnomalyFeed, RiskBadge, MethodologyComparison,
-│           │                     # RiskHistoryChart, VerdictBadge
+│           │                     # AnomalyFeed, RiskBadge, AIAnalysisPanel,
+│           │                     # RiskHistoryChart
 │           └── lib/mock-data.ts  # all dashboard data (synthetic)
 ├── docs/
 │   ├── adr/               # architecture decision records

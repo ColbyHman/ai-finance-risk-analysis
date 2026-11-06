@@ -180,18 +180,17 @@ export const anomalyAlerts: AnomalyAlert[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Per-security views: AI-assisted analysis vs. a traditional research
-// workflow for the same position. The comparison fields below (turnaround
-// time, traditional rating, etc.) are illustrative estimates for this POC,
-// not a benchmarked study — see docs/adr/0006-per-security-comparison-view.md.
+// Per-security views: an AI-assisted risk read-out for each top position —
+// score, model confidence, the signals driving it, and a 30-day trend.
+// Illustrative mock data for this POC, not a benchmarked study — see
+// docs/adr/0006-per-security-comparison-view.md and
+// docs/adr/0007-drop-traditional-research-comparison.md.
 // ---------------------------------------------------------------------------
 
 export interface RiskHistoryPoint {
   date: string;
   riskScore: number;
 }
-
-export type Verdict = "agree" | "ai-flags-earlier" | "diverge";
 
 export interface SecurityProfile {
   ticker: string;
@@ -209,17 +208,6 @@ export interface SecurityProfile {
     summary: string;
     signals: string[];
   };
-
-  traditional: {
-    rating: string;
-    turnaround: string;
-    dataFreshness: string;
-    summary: string;
-    methods: string[];
-  };
-
-  verdict: Verdict;
-  verdictNote: string;
 }
 
 export const securityProfiles: SecurityProfile[] = [
@@ -251,21 +239,6 @@ export const securityProfiles: SecurityProfile[] = [
         "Implied volatility percentile: 92nd (1Y lookback)",
       ],
     },
-    traditional: {
-      rating: "Hold (analyst consensus, last updated 6 days ago)",
-      turnaround: "5-7 business days for a refreshed research note",
-      dataFreshness: "last quarterly earnings + last analyst note (6 days old)",
-      summary:
-        "Most recent analyst note rates the position a fundamentals-driven Hold based on last quarter's earnings beat and sector growth outlook. It does not reflect this week's price move, the resulting concentration breach, or the shift in cross-asset correlation — those develop faster than the note's review cycle.",
-      methods: [
-        "Quarterly earnings review + guidance commentary",
-        "Peer-multiple (P/E, EV/EBITDA) comparison",
-        "Analyst consensus rating (updated on earnings cadence)",
-      ],
-    },
-    verdict: "ai-flags-earlier",
-    verdictNote:
-      "The AI pipeline surfaced the concentration breach and the correlation shift the same day they occurred. The most recent traditional research note — accurate for the questions it was written to answer — predates both and had no mechanism to re-flag the position between review cycles.",
   },
   {
     ticker: "EMPC3",
@@ -295,21 +268,6 @@ export const securityProfiles: SecurityProfile[] = [
         "NAV mark lag vs. comparable funds: +12 days",
       ],
     },
-    traditional: {
-      rating: "Moderate risk (manager due-diligence memo, last updated 3 months ago)",
-      turnaround: "2-4 weeks for a full manager due-diligence refresh",
-      dataFreshness: "last on-site manager review (quarterly cadence)",
-      summary:
-        "The standing due-diligence memo rates the manager and strategy as moderate risk based on historical default rates and the manager's track record. Redemption-gate mechanics are reviewed at the next scheduled due-diligence cycle, not as they occur.",
-      methods: [
-        "Manager track record and historical default-rate review",
-        "On-site / call-based manager due diligence",
-        "Fund documents (LPA, side letters) legal review",
-      ],
-    },
-    verdict: "ai-flags-earlier",
-    verdictNote:
-      "The liquidity deterioration is visible in administrative filings well before it would surface in the next scheduled due-diligence cycle — the AI pipeline's advantage here is reading that data continuously rather than on a calendar.",
   },
   {
     ticker: "USDTRY",
@@ -339,21 +297,6 @@ export const securityProfiles: SecurityProfile[] = [
         "Forward points drift vs. carry-implied fair value",
       ],
     },
-    traditional: {
-      rating: "Elevated watch (macro desk commentary, updated daily)",
-      turnaround: "same-day, but qualitative rather than scored",
-      dataFreshness: "daily macro desk note",
-      summary:
-        "The macro desk's daily note already flags EM FX as a watch item given regional headlines, but as a qualitative judgment rather than a probability estimate — it does not quantify regime-change likelihood or tie it to a specific risk-score delta the portfolio can act on systematically.",
-      methods: [
-        "Macro/geopolitical news review",
-        "Carry and rate-differential analysis",
-        "Qualitative desk-level risk commentary",
-      ],
-    },
-    verdict: "agree",
-    verdictNote:
-      "Both methods reach the same directional conclusion here — the traditional macro desk was already watching this book. The AI model's contribution is turning that qualitative watch-item into a quantified, continuously updated probability the portfolio system can threshold and act on automatically.",
   },
   {
     ticker: "SPXPUT",
@@ -383,20 +326,6 @@ export const securityProfiles: SecurityProfile[] = [
         "Implied vol skew steepening (put side)",
       ],
     },
-    traditional: {
-      rating: "Within mandate (compliance review, last run at trade inception)",
-      turnaround: "at trade inception only, not re-run unless escalated",
-      dataFreshness: "point-in-time, from when the trade was put on",
-      summary:
-        "Compliance sign-off at inception confirmed the structure fit the mandate's options-usage limits. There is no standing process to re-assess the position's Greeks as the market moves unless someone manually escalates it.",
-      methods: [
-        "Mandate/limits compliance check (at trade inception)",
-        "Static payoff diagram review",
-      ],
-    },
-    verdict: "ai-flags-earlier",
-    verdictNote:
-      "A derivatives position's risk profile can change meaningfully without any new trade or filing — purely from the underlying moving. The AI engine is the only one of the two re-checking that continuously; the compliance check was correct at the time it ran and has no trigger to re-run.",
   },
   {
     ticker: "HYLADDER",
@@ -426,21 +355,7 @@ export const securityProfiles: SecurityProfile[] = [
         "Laddered maturity profile reduces single-date rollover risk",
       ],
     },
-    traditional: {
-      rating: "Stable / Hold (credit committee review, last updated 2 months ago)",
-      turnaround: "credit committee meets monthly",
-      dataFreshness: "last scheduled credit committee review",
-      summary:
-        "Credit committee's most recent review independently reached the same stable conclusion, based on issuer fundamentals and the laddered structure's built-in rollover protection.",
-      methods: [
-        "Issuer fundamental credit review",
-        "Covenant and seniority structure review",
-        "Monthly credit committee sign-off",
-      ],
-    },
-    verdict: "agree",
-    verdictNote:
-      "This is the case for the comparison to make honestly: a genuinely stable position where the monthly-cadence traditional review and the continuous AI model reach the same answer. Automation's value here is confirmation and freeing analyst time, not catching something the committee missed.",
   },
 ];
+
 
