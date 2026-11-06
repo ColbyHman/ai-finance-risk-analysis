@@ -2,8 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { securityProfiles } from "@/lib/mock-data";
 import { RiskBadge } from "@/components/RiskBadge";
-import { VerdictBadge } from "@/components/VerdictBadge";
-import { MethodologyComparison } from "@/components/MethodologyComparison";
+import { AIAnalysisPanel } from "@/components/AIAnalysisPanel";
 import { RiskHistoryChart } from "@/components/RiskHistoryChart";
 import { ShieldAlert } from "lucide-react";
 
@@ -60,10 +59,7 @@ export default async function SecurityDetailPage({
               {security.assetClass} · {security.exposure} exposure
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <RiskBadge level={security.level} />
-            <VerdictBadge verdict={security.verdict} />
-          </div>
+          <RiskBadge level={security.level} />
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -73,27 +69,12 @@ export default async function SecurityDetailPage({
           <RiskHistoryChart data={security.riskHistory} />
         </div>
 
-        <div>
-          <h3 className="mb-3 text-sm font-semibold text-slate-900">
-            AI-Assisted Analysis vs. Traditional Research
-          </h3>
-          <MethodologyComparison security={security} />
-        </div>
-
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-900">Verdict</h3>
-          <div className="mt-2">
-            <VerdictBadge verdict={security.verdict} />
-          </div>
-          <p className="mt-3 text-sm leading-relaxed text-slate-700">
-            {security.verdictNote}
-          </p>
-        </div>
+        <AIAnalysisPanel security={security} />
       </main>
 
       <footer className="mx-auto max-w-7xl px-6 pb-8 text-xs text-slate-400">
-        POC comparison · all figures (AI and traditional) are synthetic mock
-        data illustrating the comparison concept — see docs/adr/0006-per-security-comparison-view.md.
+        POC · all figures are synthetic mock data illustrating the concept —
+        see docs/adr/0006-per-security-comparison-view.md.
       </footer>
     </div>
   );

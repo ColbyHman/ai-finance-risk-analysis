@@ -16,7 +16,7 @@ export function TopContributorsTable() {
           href="/securities"
           className="text-xs font-medium text-blue-600 hover:text-blue-700"
         >
-          Compare vs. traditional research →
+          View per-security analysis →
         </Link>
       </div>
       <div className="mt-4 overflow-x-auto">
