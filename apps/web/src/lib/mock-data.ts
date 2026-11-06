@@ -310,7 +310,13 @@ export const topRiskContributors: RiskContributor[] = [
 export interface AnomalyAlert {
   id: string;
   title: string;
-  detail: string;
+  /** Plain-English meaning — no jargon, no acronyms without context. */
+  whatItMeans: string;
+  /** Specifically why this matters (or doesn't, as much) at THIS
+   * persona's 40-year horizon — not a generic risk-management line. */
+  whyItMattersForHorizon: string;
+  /** The actual holdings/weights/numbers driving the flag. */
+  whatsDrivingIt: string;
   severity: RiskLevel;
   detectedAt: string;
   model: string;
@@ -320,8 +326,12 @@ export const anomalyAlerts: AnomalyAlert[] = [
   {
     id: "alert-1",
     title: "Effective technology-sector exposure above 40% of portfolio",
-    detail:
-      "Look-through analysis of VTI's and VXUS's own sector weightings, added to the three direct tech holdings (AAPL, NVDA, MSFT), puts total technology exposure at an estimated 41% of the portfolio — well above what '3 individual stock picks' suggests on its own.",
+    whatItMeans:
+      "Forty-one cents of every dollar in this portfolio is effectively riding on the technology sector once index funds are unpacked into their own sector weightings — even though the account looks diversified at a glance (7 holdings, 5 asset classes).",
+    whyItMattersForHorizon:
+      "At 40 years out, a few bad years for tech are recoverable — the retirement projection already factors in this level of volatility. What matters is that the portfolio's real bet is narrower than '7 holdings, 5 asset classes' suggests, so the odds shown on the projection page assume this concentration, not a lower one.",
+    whatsDrivingIt:
+      "VTI's own ~30% technology weighting plus VXUS's smaller tech sleeve, plus AAPL, NVDA, and MSFT held directly (30% of the whole portfolio combined).",
     severity: "high",
     detectedAt: "2026-10-25 09:14 UTC",
     model: "sector-lookthrough-v2",
@@ -329,8 +339,12 @@ export const anomalyAlerts: AnomalyAlert[] = [
   {
     id: "alert-2",
     title: "Single-stock concentration: NVDA above typical guidance",
-    detail:
-      "NVDA is 10% of the portfolio in one stock — above the 5-10% ceiling commonly cited for individual-stock concentration — and realized volatility over the trailing 30 days sits in the 90th percentile of this stock's own 2-year history.",
+    whatItMeans:
+      "One company — NVIDIA — makes up 10% of the entire portfolio, more than double the 5% ceiling commonly cited as a starting point for single-stock positions.",
+    whyItMattersForHorizon:
+      "A single company's fortunes (a bad product cycle, a lost customer, new competition) can swing this portfolio's trajectory more than a 40-year retirement plan would ideally depend on — even though NVDA specifically has performed well recently. The scenario replay's 2022 drawdown is the concrete version of this risk.",
+    whatsDrivingIt:
+      "NVDA direct holding at 10% allocation ($1,800 of $18,000); realized 30-day volatility sits in the 90th percentile of its own 2-year range.",
     severity: "high",
     detectedAt: "2026-10-25 08:52 UTC",
     model: "concentration-monitor",
@@ -338,8 +352,12 @@ export const anomalyAlerts: AnomalyAlert[] = [
   {
     id: "alert-3",
     title: "Elevated correlation among AAPL, MSFT, and NVDA",
-    detail:
-      "Estimated trailing 2-year pairwise correlation between the three individual tech holdings is 0.78-0.85 — in a tech-sector drawdown, these positions are unlikely to offset each other, or VTI's own tech sleeve.",
+    whatItMeans:
+      "AAPL, MSFT, and NVDA tend to rise and fall together — to a risk model, they're closer to one large position than three separate bets.",
+    whyItMattersForHorizon:
+      "In a tech-sector drawdown, these three holdings — plus the tech sleeve inside VTI — won't offset each other the way genuinely different asset classes would. That's exactly what made the 2022 scenario worse for this persona than a generic diversified portfolio of the same allocation (see the scenario replay).",
+    whatsDrivingIt:
+      "Estimated trailing 2-year pairwise correlation of 0.78-0.85 between AAPL, MSFT, and NVDA.",
     severity: "medium",
     detectedAt: "2026-10-24 22:03 UTC",
     model: "correlation-drift-v3",
@@ -347,8 +365,12 @@ export const anomalyAlerts: AnomalyAlert[] = [
   {
     id: "alert-4",
     title: "International allocation below typical diversification guidance",
-    detail:
-      "VXUS is 15% of the total portfolio (about 19% of the equity sleeve specifically) — below the 20-30% international equity allocation many advisors suggest as a US-market diversifier.",
+    whatItMeans:
+      "International stocks (VXUS) are a smaller slice of this portfolio than many advisors suggest for a US-based investor.",
+    whyItMattersForHorizon:
+      "Over a 40-year career, US and international markets won't always lead at the same time — a thin international sleeve means missing more of whichever decade international happens to outperform, without materially lowering overall risk today.",
+    whatsDrivingIt:
+      "VXUS at 15% of the total portfolio (about 19% of the equity sleeve specifically), versus a commonly-cited 20-30% international-equity guideline.",
     severity: "medium",
     detectedAt: "2026-10-24 17:40 UTC",
     model: "allocation-guidance-check",

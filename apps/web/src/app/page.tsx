@@ -2,7 +2,7 @@ import { SummaryCard } from "@/components/SummaryCard";
 import { ExposureChart, RiskTrendChart } from "@/components/RiskCharts";
 import { TopContributorsTable } from "@/components/TopContributorsTable";
 import { AnomalyFeed } from "@/components/AnomalyFeed";
-import { persona, portfolioAssumptions, summaryMetrics } from "@/lib/mock-data";
+import { drawdownScenarios, persona, portfolioAssumptions, summaryMetrics } from "@/lib/mock-data";
 import { probabilityOfGoal, runProjection } from "@/lib/projection";
 import { ShieldAlert, Network, TrendingUp } from "lucide-react";
 import Link from "next/link";
@@ -18,7 +18,7 @@ export default function Home() {
   // input) — the interactive version lives on /retirement. Computed
   // server-side since runProjection is a pure, seeded function; same
   // result either side.
-  const baseline = runProjection({
+  const common = {
     currentAge: persona.age,
     retirementAge: persona.retirementAge,
     currentBalance: persona.currentBalance,
@@ -27,9 +27,27 @@ export default function Home() {
     volatility: portfolioAssumptions.blendedVolatility,
     seed: portfolioAssumptions.seed,
     pathCount: portfolioAssumptions.pathCount,
-  });
+  };
+  const baseline = runProjection(common);
   const medianAtRetirement = baseline.points[baseline.points.length - 1]?.p50 ?? 0;
   const goalProbability = probabilityOfGoal(baseline.finalValuesSorted, persona.goalAtRetirement);
+
+  // Headline "worst-case" figure: whichever historical-style scenario
+  // does the most damage to the median age-65 outcome, replayed as
+  // year 1 (see /scenarios). Long-horizon-relevant in a way 1-day VaR
+  // isn't — this is what the dashboard leads with instead.
+  const baselineFinal = medianAtRetirement;
+  let worstScenario = drawdownScenarios[0];
+  let worstPctImpact = 0;
+  for (const s of drawdownScenarios) {
+    const shocked = runProjection({ ...common, firstYearShock: s.peakToTroughPct });
+    const shockedFinal = shocked.points[shocked.points.length - 1]?.p50 ?? 0;
+    const pctImpact = baselineFinal > 0 ? (baselineFinal - shockedFinal) / baselineFinal : 0;
+    if (pctImpact > worstPctImpact) {
+      worstPctImpact = pctImpact;
+      worstScenario = s;
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -54,7 +72,7 @@ export default function Home() {
 
       <main className="mx-auto max-w-7xl space-y-6 px-6 py-8">
         <section className="rounded-xl border border-blue-200 bg-blue-50/50 p-5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-start gap-3">
               <TrendingUp className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
               <div>
@@ -64,9 +82,7 @@ export default function Home() {
                 <p className="mt-1 max-w-2xl text-sm text-slate-600">
                   Age {persona.age} today, ${persona.monthlyContribution}/mo, projected to a
                   median of <strong>{formatCompactDollars(medianAtRetirement)}</strong> by age{" "}
-                  {persona.retirementAge} — a{" "}
-                  <strong>{Math.round(goalProbability * 100)}% chance</strong> of reaching the{" "}
-                  {formatCompactDollars(persona.goalAtRetirement)} goal.
+                  {persona.retirementAge}.
                 </p>
               </div>
             </div>
@@ -76,6 +92,20 @@ export default function Home() {
             >
               See the full projection →
             </Link>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="rounded-lg bg-white px-4 py-3 ring-1 ring-inset ring-blue-100">
+              <p className="text-xs text-slate-500">Probability of reaching the goal</p>
+              <p className="text-2xl font-bold text-blue-900">{Math.round(goalProbability * 100)}%</p>
+            </div>
+            <div className="rounded-lg bg-white px-4 py-3 ring-1 ring-inset ring-blue-100">
+              <p className="text-xs text-slate-500">
+                Worst-case historical shock ({worstScenario.label.replace(/^\d{4}\s*/, "")})
+              </p>
+              <p className="text-2xl font-bold text-red-700">
+                -{Math.round(worstPctImpact * 100)}% to age-65 outcome
+              </p>
+            </div>
           </div>
         </section>
 
@@ -98,12 +128,6 @@ export default function Home() {
               Explore scenarios →
             </Link>
           </div>
-        </section>
-
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {summaryMetrics.map((metric) => (
-            <SummaryCard key={metric.label} metric={metric} />
-          ))}
         </section>
 
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -141,6 +165,18 @@ export default function Home() {
           </div>
           <div className="lg:col-span-2">
             <AnomalyFeed />
+          </div>
+        </section>
+
+        <section>
+          <p className="mb-2 text-xs font-medium text-slate-400">
+            Secondary metrics — short-horizon risk indicators, less relevant at a 40-year horizon
+            than the projection and scenario views above
+          </p>
+          <div className="grid grid-cols-2 gap-3 opacity-80 sm:grid-cols-4">
+            {summaryMetrics.map((metric) => (
+              <SummaryCard key={metric.label} metric={metric} compact />
+            ))}
           </div>
         </section>
       </main>

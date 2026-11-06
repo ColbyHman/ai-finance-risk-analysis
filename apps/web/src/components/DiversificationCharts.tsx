@@ -76,8 +76,13 @@ export function AssetAllocationChart() {
 
 /** The look-through view: what sector these holdings actually belong
  * to once index funds' own weightings are unpacked, not just which
- * account "bucket" they sit in. Technology is highlighted since it's
- * the sector carrying the portfolio's concentration risk. */
+ * account "bucket" they sit in. Each bar is split into "direct
+ * holdings" (AAPL/NVDA/MSFT held outright) vs. "via index funds"
+ * (VTI's and VXUS's own sector weightings) — the whole point of this
+ * chart is that the technology bar is mostly NOT the three individual
+ * stocks a quick glance at the holdings list would blame it on.
+ * Technology is highlighted since it's the sector carrying the
+ * portfolio's concentration risk. */
 export function SectorExposureChart() {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -85,7 +90,7 @@ export function SectorExposureChart() {
         Effective Sector Exposure (Look-Through)
       </h3>
       <p className="mt-1 text-xs text-slate-500">
-        % of total portfolio, including each index fund&apos;s own sector weighting
+        % of total portfolio — direct stock holdings vs. exposure hidden inside index funds
       </p>
       <div className="mt-4 h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -100,15 +105,28 @@ export function SectorExposureChart() {
               height={70}
             />
             <YAxis tick={{ fontSize: 11 }} unit="%" />
-            <Tooltip formatter={(v) => `${v}%`} />
-            <Bar dataKey="pct" name="Portfolio %" radius={[4, 4, 0, 0]}>
+            <Tooltip formatter={(v, name) => [`${v}%`, name]} />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Bar dataKey="viaIndividualStocks" stackId="sector" name="Direct stock holdings" radius={[0, 0, 0, 0]}>
               {sectorExposure.map((s, i) => (
                 <Cell key={i} fill={s.sector === "Technology" ? SECTOR_HIGHLIGHT : SECTOR_DEFAULT} />
+              ))}
+            </Bar>
+            <Bar dataKey="viaIndexFunds" stackId="sector" name="Via index funds (VTI/VXUS)" radius={[4, 4, 0, 0]}>
+              {sectorExposure.map((s, i) => (
+                <Cell
+                  key={i}
+                  fill={s.sector === "Technology" ? "#fca5a5" : "#93c5fd"}
+                />
               ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
+      <p className="mt-2 text-xs text-slate-500">
+        The three direct stock picks (AAPL, NVDA, MSFT) already total 30% on their own —
+        index funds add another 11 points on top, hidden from a glance at the holdings list.
+      </p>
     </div>
   );
 }
