@@ -3,7 +3,8 @@ import { ExposureChart, RiskTrendChart } from "@/components/RiskCharts";
 import { TopContributorsTable } from "@/components/TopContributorsTable";
 import { AnomalyFeed } from "@/components/AnomalyFeed";
 import { summaryMetrics } from "@/lib/mock-data";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, Network } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -17,7 +18,7 @@ export default function Home() {
                 AI Finance Risk Analysis
               </h1>
               <p className="text-xs text-slate-500">
-                Portfolio Risk Dashboard · Proof of Concept
+                Personal Portfolio Risk Dashboard · Proof of Concept
               </p>
             </div>
           </div>
@@ -37,6 +38,30 @@ export default function Home() {
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <ExposureChart />
           <RiskTrendChart />
+        </section>
+
+        <section className="rounded-xl border border-amber-200 bg-amber-50/50 p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <Network className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">
+                  Diversification risk: moderate concentration flagged
+                </h3>
+                <p className="mt-1 max-w-2xl text-sm text-slate-600">
+                  Seven holdings, five asset classes — looks diversified. Once
+                  index funds are unpacked into their own sector weightings,
+                  technology alone is an estimated 41% of the portfolio.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/diversification"
+              className="shrink-0 text-sm font-medium text-blue-600 hover:text-blue-700"
+            >
+              View diversification analysis →
+            </Link>
+          </div>
         </section>
 
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-5">
