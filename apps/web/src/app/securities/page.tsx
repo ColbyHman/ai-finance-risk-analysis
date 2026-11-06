@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { securityProfiles } from "@/lib/mock-data";
 import { RiskBadge } from "@/components/RiskBadge";
-import { VerdictBadge } from "@/components/VerdictBadge";
 import { ShieldAlert } from "lucide-react";
 
 export default function SecuritiesIndexPage() {
@@ -15,9 +14,7 @@ export default function SecuritiesIndexPage() {
               <h1 className="text-lg font-semibold text-slate-900">
                 AI Finance Risk Analysis
               </h1>
-              <p className="text-xs text-slate-500">
-                Per-Security Views · AI vs. Traditional Research
-              </p>
+              <p className="text-xs text-slate-500">Per-Security Views</p>
             </div>
           </Link>
           <Link
@@ -33,12 +30,9 @@ export default function SecuritiesIndexPage() {
         <div>
           <h2 className="text-xl font-semibold text-slate-900">Securities</h2>
           <p className="mt-1 max-w-3xl text-sm text-slate-600">
-            Each security below has an AI-assisted risk read-out alongside the
-            equivalent traditional research workflow, so the two can be
-            compared directly on the same position. This demonstrates where
-            automation adds speed/continuity and where it simply confirms
-            what traditional research already found — see each security page
-            for the full comparison.
+            Each security below has an AI-assisted risk read-out: a score,
+            model confidence, and the signals driving it — see each
+            security's page for the full detail and 30-day trend.
           </p>
         </div>
 
@@ -50,8 +44,8 @@ export default function SecuritiesIndexPage() {
                 <th className="px-5 py-3">Asset Class</th>
                 <th className="px-5 py-3">Exposure</th>
                 <th className="px-5 py-3">AI Risk Score</th>
+                <th className="px-5 py-3">Confidence</th>
                 <th className="px-5 py-3">Level</th>
-                <th className="px-5 py-3">Comparison vs. Traditional</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -69,11 +63,9 @@ export default function SecuritiesIndexPage() {
                   <td className="px-5 py-4 text-slate-600">{s.assetClass}</td>
                   <td className="px-5 py-4 text-slate-600">{s.exposure}</td>
                   <td className="px-5 py-4 text-slate-600">{s.ai.riskScore}</td>
+                  <td className="px-5 py-4 text-slate-600">{s.ai.confidence}%</td>
                   <td className="px-5 py-4">
                     <RiskBadge level={s.level} />
-                  </td>
-                  <td className="px-5 py-4">
-                    <VerdictBadge verdict={s.verdict} />
                   </td>
                 </tr>
               ))}
