@@ -7,10 +7,11 @@ const { chromium } = require('playwright');
   });
   const page = await browser.newPage({ viewport: { width: 1440, height: 1600 } });
 
+  const base = process.env.SCREENSHOT_BASE_URL || 'http://localhost:3000';
   const shots = [
-    { url: 'http://localhost:3201/digest', out: '../../docs/screenshots/digest.png' },
-    { url: 'http://localhost:3201/portfolio-health', out: '../../docs/screenshots/portfolio-health.png' },
-    { url: 'http://localhost:3201/securities/NVDA', out: '../../docs/screenshots/security-detail-brief.png' },
+    { url: `${base}/`, out: '../../docs/screenshots/triage-inbox.png' },
+    { url: `${base}/portfolio-health`, out: '../../docs/screenshots/portfolio-health.png' },
+    { url: `${base}/securities/NVDA`, out: '../../docs/screenshots/security-detail-nvda.png' },
   ];
 
   for (const s of shots) {
