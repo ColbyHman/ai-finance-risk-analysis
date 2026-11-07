@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ThemeToggle } from "./ThemeToggle";
 
 export const siteNavLinks: { href: string; label: string }[] = [
   { href: "/", label: "Inbox" },
@@ -24,8 +25,8 @@ export function SiteNav({ current }: { current?: string }) {
             href={link.href}
             className={
               isCurrent
-                ? "rounded-md border border-[#2d333b] bg-[#20242a] px-3.5 py-[7px] text-xs font-semibold text-[#f4f4f4]"
-                : "rounded-md border border-transparent px-3.5 py-[7px] text-xs font-semibold text-[#9ba3ab] transition-colors hover:border-[#2d333b] hover:text-[#f4f4f4]"
+                ? "rounded-md border border-[var(--border)] bg-[var(--surface)] px-3.5 py-[7px] text-xs font-semibold text-[var(--ink)]"
+                : "rounded-md border border-transparent px-3.5 py-[7px] text-xs font-semibold text-[var(--ink-dim)] transition-colors hover:border-[var(--border)] hover:text-[var(--ink)]"
             }
           >
             {link.label}
@@ -42,10 +43,13 @@ export function SiteNav({ current }: { current?: string }) {
 export function TopNav({ current }: { current?: string }) {
   return (
     <nav className="mx-auto flex max-w-[1020px] items-center justify-between px-6 py-[18px]">
-      <Link href="/" className="text-sm font-bold tracking-tight text-[#f4f4f4] no-underline">
+      <Link href="/" className="text-sm font-bold tracking-tight text-[var(--ink)] no-underline">
         ◆ Finance Copilot
       </Link>
-      <SiteNav current={current} />
+      <div className="flex items-center gap-3">
+        <SiteNav current={current} />
+        <ThemeToggle />
+      </div>
     </nav>
   );
 }

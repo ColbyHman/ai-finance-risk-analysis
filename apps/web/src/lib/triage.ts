@@ -49,7 +49,7 @@ export const triageHoldings: TriageHolding[] = [
     reason: "New insider-selling cluster — thesis-relevant, not yet reflected in price",
     trend: [40, 42, 38, 44, 48, 45, 50, 52],
     reviewed: false,
-    color: "#4ade80",
+    color: "var(--green)",
   },
   {
     ticker: "AAPL",
@@ -85,7 +85,7 @@ export const triageHoldings: TriageHolding[] = [
     reason: "Macro/rate driver, not fund-specific — portfolio-level relevance",
     trend: [50, 49, 48, 47, 48, 46, 45, 44],
     reviewed: false,
-    color: "#9ba3ab",
+    color: "var(--swatch-neutral-2)",
   },
   {
     ticker: "VTI",
@@ -94,7 +94,7 @@ export const triageHoldings: TriageHolding[] = [
     headline: "No notable news this week",
     reviewed: true,
     trend: [50, 50, 50, 50, 50, 50, 50, 50],
-    color: "#f4f4f4",
+    color: "var(--swatch-neutral-1)",
   },
   {
     ticker: "VXUS",
@@ -103,7 +103,7 @@ export const triageHoldings: TriageHolding[] = [
     headline: "No notable news this week",
     reviewed: true,
     trend: [50, 50, 50, 50, 50, 50, 50, 50],
-    color: "#6b7280",
+    color: "var(--ink-faint)",
   },
   {
     ticker: "Cash",
@@ -184,12 +184,12 @@ export interface HealthHolding {
 }
 
 export const healthHoldings: HealthHolding[] = [
-  { ticker: "NVDA", weight: 9.8, price: 487.32, d1: 1.8, ytd: 62.4, trend: [40, 42, 38, 44, 48, 45, 50, 52], color: "#4ade80" },
+  { ticker: "NVDA", weight: 9.8, price: 487.32, d1: 1.8, ytd: 62.4, trend: [40, 42, 38, 44, 48, 45, 50, 52], color: "var(--green)" },
   { ticker: "AAPL", weight: 14.2, price: 228.14, d1: -0.6, ytd: 11.2, trend: [60, 58, 59, 55, 56, 52, 53, 49], color: "#60a5fa" },
   { ticker: "MSFT", weight: 6.3, price: 412.77, d1: 0.2, ytd: 19.8, trend: [70, 71, 69, 70, 68, 69, 67, 68], color: "#38bdf8" },
-  { ticker: "VTI", weight: 22.0, price: 271.05, d1: 0.4, ytd: 17.1, trend: [268, 269, 270, 271, 270, 272, 273, 274], color: "#f4f4f4" },
-  { ticker: "VXUS", weight: 9.0, price: 61.88, d1: -0.1, ytd: 9.4, trend: [48, 47, 48, 49, 48, 49, 50, 49], color: "#9ba3ab" },
-  { ticker: "BND", weight: 8.5, price: 72.41, d1: -0.3, ytd: -1.8, trend: [50, 49, 48, 47, 48, 46, 45, 44], color: "#6b7280" },
+  { ticker: "VTI", weight: 22.0, price: 271.05, d1: 0.4, ytd: 17.1, trend: [268, 269, 270, 271, 270, 272, 273, 274], color: "var(--swatch-neutral-1)" },
+  { ticker: "VXUS", weight: 9.0, price: 61.88, d1: -0.1, ytd: 9.4, trend: [48, 47, 48, 49, 48, 49, 50, 49], color: "var(--swatch-neutral-2)" },
+  { ticker: "BND", weight: 8.5, price: 72.41, d1: -0.3, ytd: -1.8, trend: [50, 49, 48, 47, 48, 46, 45, 44], color: "var(--ink-faint)" },
   { ticker: "Cash", weight: 3.0, price: 1.0, d1: 0.0, ytd: 4.9, trend: [1, 1, 1, 1, 1, 1, 1, 1], color: "#3f454d" },
 ];
 
