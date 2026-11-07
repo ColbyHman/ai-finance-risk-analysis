@@ -101,14 +101,16 @@ export default function PortfolioHealthPage() {
                 </span>
               </div>
             </div>
-            <div className="flex gap-0.5 rounded-full bg-[#262b32] p-1">
+            <div className="flex gap-0.5 rounded-lg bg-[#262b32] p-1">
               {TIMEFRAMES.map((t) => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => setTf(t)}
-                  className={`rounded-full px-3.5 py-1.5 text-[11.5px] font-bold ${
-                    tf === t ? "bg-white text-[#191c1f]" : "text-[#6b7280]"
+                  className={`rounded-md border px-3.5 py-1.5 text-[11.5px] font-bold transition-colors ${
+                    tf === t
+                      ? "border-white bg-white text-[#191c1f]"
+                      : "border-transparent text-[#6b7280] hover:border-[#2d333b] hover:text-[#f4f4f4]"
                   }`}
                 >
                   {t}
@@ -160,7 +162,7 @@ export default function PortfolioHealthPage() {
                 <p className="mt-0.5 mb-2.5 text-[10.5px] text-[#6b7280]">today&apos;s move</p>
                 <Link
                   href={`/securities/${h.ticker}`}
-                  className="inline-flex items-center gap-[3px] rounded-full bg-white px-[11px] py-[5px] text-[11.5px] font-bold text-[#191c1f] no-underline"
+                  className="inline-flex items-center gap-[3px] rounded-lg border border-white bg-white px-3 py-[6px] text-[11.5px] font-bold text-[#191c1f] no-underline transition-colors hover:border-[#9ba3ab] hover:bg-[#9ba3ab]"
                 >
                   {linkText}
                 </Link>
@@ -246,7 +248,7 @@ export default function PortfolioHealthPage() {
         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
           <div className="rounded-[20px] bg-[#20242a] px-5 py-[18px]">
             <p className="mb-1 text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#6b7280]">Allocation</p>
-            <div className="my-3 flex h-4 overflow-hidden rounded-full">
+            <div className="my-3 flex h-4 overflow-hidden rounded-md">
               {healthHoldings.map((h) => (
                 <div key={h.ticker} style={{ width: `${h.weight}%`, background: ALLOC_COLORS[h.ticker] }} />
               ))}

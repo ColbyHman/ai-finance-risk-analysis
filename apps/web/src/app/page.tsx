@@ -117,8 +117,8 @@ export default function HomePage() {
                           <span className="font-mono text-[11px] tabular-nums text-[#6b7280]">{h.weight}%</span>
                         </div>
                         <span
-                          className={`rounded-full px-[11px] py-1 text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#191c1f] ${
-                            h.status === "act" ? "bg-[#f87171]" : "bg-[#fbbf24]"
+                          className={`rounded-lg border px-[11px] py-1 text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#191c1f] ${
+                            h.status === "act" ? "bg-[#f87171] border-[#f87171]" : "bg-[#fbbf24] border-[#fbbf24]"
                           }`}
                         >
                           {g.label}
@@ -132,7 +132,7 @@ export default function HomePage() {
                         <span className="text-[11px] italic text-[#6b7280]">{h.reason}</span>
                         <button
                           type="button"
-                          className="relative z-[2] flex-shrink-0 rounded-full bg-[#f4f4f4] px-3.5 py-1.5 text-[11.5px] font-bold text-[#191c1f]"
+                          className="relative z-[2] flex-shrink-0 rounded-lg border border-[#f4f4f4] bg-[#f4f4f4] px-4 py-[7px] text-[11.5px] font-bold text-[#191c1f] transition-colors hover:border-[#9ba3ab] hover:bg-[#9ba3ab]"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -214,7 +214,7 @@ export default function HomePage() {
                     <Link
                       key={t}
                       href={`/securities/${t}`}
-                      className="rounded-full bg-[#262b32] px-[9px] py-[3px] text-[10.5px] font-bold text-[#9ba3ab] no-underline"
+                      className="rounded-md border border-[#2d333b] bg-[#262b32] px-[9px] py-[3px] text-[10.5px] font-bold text-[#9ba3ab] no-underline transition-colors hover:border-[#f4f4f4] hover:text-[#f4f4f4]"
                     >
                       {t}
                     </Link>
@@ -226,7 +226,7 @@ export default function HomePage() {
           <div className="mb-3 flex items-start gap-3.5 rounded-[20px] bg-[#20242a] px-5 py-[18px]">
             <div className="flex-1">
               <p className="m-0 mb-2.5 text-[13.5px] font-bold">Current allocation</p>
-              <div className="mt-2 flex h-[22px] overflow-hidden rounded-full">
+              <div className="mt-2 flex h-[22px] overflow-hidden rounded-lg">
                 {triageHoldings.map((h) => (
                   <div key={h.ticker} style={{ width: `${h.weight}%`, background: h.color }} />
                 ))}

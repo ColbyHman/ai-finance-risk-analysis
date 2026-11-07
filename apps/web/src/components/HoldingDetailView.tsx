@@ -8,21 +8,21 @@ function StatusChip({ status }: { status: "act" | "watch" | "none" }) {
   const label = status === "act" ? "Act" : status === "watch" ? "Watch" : "No action";
   const cls =
     status === "act"
-      ? "bg-[#f87171] text-[#191c1f]"
+      ? "bg-[#f87171] text-[#191c1f] border-[#f87171]"
       : status === "watch"
-      ? "bg-[#fbbf24] text-[#191c1f]"
-      : "bg-[#262b32] text-[#9ba3ab]";
-  return <span className={`rounded-full px-3 py-[5px] text-[10.5px] font-bold uppercase tracking-[0.04em] ${cls}`}>{label}</span>;
+      ? "bg-[#fbbf24] text-[#191c1f] border-[#fbbf24]"
+      : "bg-[#262b32] text-[#9ba3ab] border-[#2d333b]";
+  return <span className={`rounded-md border px-3 py-[5px] text-[10.5px] font-bold uppercase tracking-[0.04em] ${cls}`}>{label}</span>;
 }
 
 function VerdictChip({ type, label }: { type: VerdictType; label: string }) {
   const cls =
     type === "weakens"
-      ? "bg-[rgba(251,191,36,0.14)] text-[#fbbf24]"
+      ? "bg-[rgba(251,191,36,0.14)] text-[#fbbf24] border-[rgba(251,191,36,0.4)]"
       : type === "supports"
-      ? "bg-[rgba(74,222,128,0.14)] text-[#4ade80]"
-      : "bg-[#262b32] text-[#9ba3ab]";
-  return <span className={`rounded-full px-[11px] py-1 text-[11px] font-bold ${cls}`}>{label}</span>;
+      ? "bg-[rgba(74,222,128,0.14)] text-[#4ade80] border-[rgba(74,222,128,0.4)]"
+      : "bg-[#262b32] text-[#9ba3ab] border-[#2d333b]";
+  return <span className={`rounded-md border px-[11px] py-1 text-[11px] font-bold ${cls}`}>{label}</span>;
 }
 
 export function HoldingDetailView({ ticker, detail }: { ticker: string; detail: HoldingDetail }) {
@@ -77,7 +77,7 @@ export function HoldingDetailView({ ticker, detail }: { ticker: string; detail: 
                 type="button"
                 disabled={reviewed}
                 onClick={() => setReviewed(true)}
-                className="rounded-full bg-white px-[15px] py-[7px] text-xs font-bold text-[#191c1f] disabled:opacity-60"
+                className="rounded-lg border border-white bg-white px-4 py-[7px] text-xs font-bold text-[#191c1f] transition-colors hover:border-[#9ba3ab] hover:bg-[#9ba3ab] disabled:opacity-60"
               >
                 {reviewed ? "Reviewed ✓" : "Mark reviewed"}
               </button>
@@ -173,12 +173,12 @@ export function HoldingDetailView({ ticker, detail }: { ticker: string; detail: 
                 </p>
                 <div className="flex items-center gap-2.5">
                   <span
-                    className={`rounded-full px-2 py-[2px] text-[10px] font-bold ${
+                    className={`rounded-md border px-2 py-[2px] text-[10px] font-bold ${
                       t.tag === "primary"
-                        ? "bg-[rgba(167,139,250,0.14)] text-[#a78bfa]"
+                        ? "bg-[rgba(167,139,250,0.14)] text-[#a78bfa] border-[rgba(167,139,250,0.4)]"
                         : t.tag === "outlet"
-                        ? "bg-[rgba(96,165,250,0.14)] text-[#60a5fa]"
-                        : "bg-[#262b32] text-[#6b7280]"
+                        ? "bg-[rgba(96,165,250,0.14)] text-[#60a5fa] border-[rgba(96,165,250,0.4)]"
+                        : "bg-[#262b32] text-[#6b7280] border-[#2d333b]"
                     }`}
                   >
                     {t.tagLabel}

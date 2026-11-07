@@ -6,7 +6,8 @@ export const siteNavLinks: { href: string; label: string }[] = [
 ];
 
 /**
- * Shared top nav — dark pill-tab style ported from the mockups'
+ * Shared top nav — rounded-rectangle tab buttons (not pills — see
+ * docs/adr/0013-rectangular-buttons.md) ported from the mockups'
  * <nav class="topnav">, per
  * docs/adr/0011-triage-inbox-visual-implementation.md. Only the two
  * Finance Copilot pages remain (see docs/adr/0012-scope-narrowing.md) —
@@ -23,8 +24,8 @@ export function SiteNav({ current }: { current?: string }) {
             href={link.href}
             className={
               isCurrent
-                ? "rounded-full bg-[#20242a] px-3.5 py-[7px] text-xs font-semibold text-[#f4f4f4]"
-                : "rounded-full px-3.5 py-[7px] text-xs font-semibold text-[#9ba3ab] hover:text-[#f4f4f4]"
+                ? "rounded-md border border-[#2d333b] bg-[#20242a] px-3.5 py-[7px] text-xs font-semibold text-[#f4f4f4]"
+                : "rounded-md border border-transparent px-3.5 py-[7px] text-xs font-semibold text-[#9ba3ab] transition-colors hover:border-[#2d333b] hover:text-[#f4f4f4]"
             }
           >
             {link.label}
