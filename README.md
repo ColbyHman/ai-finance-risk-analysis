@@ -7,8 +7,21 @@ early-career retirement investor: age 25, a $18,000 brokerage account
 
 A 1-day Value at Risk number and a 0-100 risk score matter very little
 to someone with a 40-year horizon, so the dashboard is built around four
-questions a long-term investor actually asks:
+questions a long-term investor actually asks — plus a fifth surface,
+research triage, that answers a different question entirely: not "is
+this portfolio healthy," but "what actually changed and is worth a
+look right now."
 
+- **What changed, and is it worth a look?** ([`/digest`](apps/web/src/app/digest/page.tsx),
+  the landing page) — every holding's recent news, sentiment signal,
+  and tax-lot timing in one feed, ranked by relevance to this specific
+  portfolio (position size, news recency/volume, tax-lot urgency,
+  diversification impact) via a pure ranking function, never
+  hardcoded order. Every signal shows its basis (e.g. "analyst
+  commentary tone," "social chatter volume") and links straight into
+  the relevant holding's brief — information plus "why it might
+  matter," never a buy/sell/hold call. See
+  [`docs/adr/0010-research-copilot-reframe.md`](docs/adr/0010-research-copilot-reframe.md).
 - **Am I on track?** ([`/retirement`](apps/web/src/app/retirement/page.tsx)) —
   a seeded Monte Carlo projection to age 65 (10th/50th/90th percentile
   fan chart against the goal), with live sliders for contribution and
@@ -17,7 +30,8 @@ questions a long-term investor actually asks:
   2008/2020/2022-style drawdowns replayed against this persona's actual
   allocation, with a toggle comparing the same shock against a
   hypothetical 58-year-old pre-retiree to show why horizon matters.
-- **Why is it flagged?** (dashboard + [`/diversification`](apps/web/src/app/diversification/page.tsx)) —
+- **Why is it flagged?** ([`/portfolio-health`](apps/web/src/app/portfolio-health/page.tsx),
+  the former landing page, plus [`/diversification`](apps/web/src/app/diversification/page.tsx)) —
   every AI risk flag explained in three parts (what it means, why it
   matters at this horizon, what's driving it), plus a visual showing
   how much of the portfolio's technology exposure is hidden inside
@@ -26,6 +40,12 @@ questions a long-term investor actually asks:
   three ranked, single-lever suggestions (each with a before/after on
   tech exposure and on the pessimistic-case outcome at 65), plus what
   fee drag costs over 40 years even on a low-cost portfolio.
+
+Each security's own page ([`/securities/[ticker]`](apps/web/src/app/securities/[ticker]/page.tsx))
+now also carries a research brief: a fundamentals-vs-own-history-and-peers
+snapshot, that holding's news digest, its sentiment signal, any
+tax-lot flags, and a 180-day price/fundamental trend chart — in
+addition to, not replacing, the existing AI risk score and signals.
 
 **This is a POC with no backend, no data pipeline, and no real data.**
 Everything on screen is synthetic/mock data defined in
@@ -39,6 +59,19 @@ projection, scenario replay, and suggested-action math, worked out by
 hand so it's auditable rather than a black box.
 
 ## Screenshots
+
+Digest — the new landing page, holdings ranked by relevance:
+
+![Digest](docs/screenshots/digest.png)
+
+Portfolio health — the former dashboard, now its own route:
+
+![Portfolio health](docs/screenshots/portfolio-health.png)
+
+One holding's full research brief — fundamentals, trend, news, sentiment,
+and tax-lot flags, alongside the existing AI risk read-out:
+
+![Security detail — research brief](docs/screenshots/security-detail-brief.png)
 
 Dashboard — full page:
 
@@ -84,16 +117,20 @@ ai-finance-risk-analysis/
 ├── apps/
 │   └── web/              # Next.js (App Router) dashboard
 │       └── src/
-│           ├── app/              # page.tsx, retirement/, scenarios/,
-│           │                     # actions/, securities/, diversification/
+│           ├── app/              # page.tsx (digest), digest/, portfolio-health/,
+│           │                     # retirement/, scenarios/, actions/, securities/,
+│           │                     # diversification/
 │           ├── components/       # SummaryCard, RiskCharts, TopContributorsTable,
 │           │                     # AnomalyFeed, RiskBadge, AIAnalysisPanel,
 │           │                     # RetirementProjection, ScenarioExplorer,
 │           │                     # SuggestedActions, DiversificationCharts,
-│           │                     # DiversificationScoreCard
+│           │                     # DiversificationScoreCard, SiteNav, DigestPage,
+│           │                     # DigestCard, SecurityBrief, SentimentSignalBadge,
+│           │                     # TaxLotFlagNotice, TrendSeriesChart
 │           └── lib/
 │               ├── mock-data.ts  # all dashboard data (synthetic)
-│               └── projection.ts # seeded Monte Carlo + scenario/fee-drag math
+│               ├── projection.ts # seeded Monte Carlo + scenario/fee-drag math
+│               └── digest.ts     # pure relevance-ranking function for the digest feed
 ├── docs/
 │   ├── adr/               # architecture decision records
 │   └── screenshots/       # dashboard screenshots (this README embeds them)
