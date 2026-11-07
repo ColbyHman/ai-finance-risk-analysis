@@ -87,7 +87,7 @@ export default function PortfolioHealthPage() {
                   as of 10:42 AM ET
                 </span>
               </p>
-              <p className="m-0 font-mono text-[40px] font-medium tabular-nums tracking-tight text-white">
+              <p className="m-0 font-mono text-[40px] font-medium tabular-nums tracking-tight text-[var(--ink)]">
                 ${d.value.toLocaleString()}
               </p>
               <div
@@ -149,7 +149,7 @@ export default function PortfolioHealthPage() {
             return (
               <div key={h.ticker} className="flex-1 rounded-[20px] bg-[var(--surface)] px-[18px] py-4">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-sm font-bold text-white">{h.ticker}</span>
+                  <span className="text-sm font-bold text-[var(--ink)]">{h.ticker}</span>
                   <span
                     className={`font-mono text-sm font-bold tabular-nums ${
                       moverUp ? "text-[var(--green)]" : h.d1 < 0 ? "text-[var(--red)]" : ""
