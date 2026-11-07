@@ -43,8 +43,10 @@ body {
   font-family: -apple-system, "Segoe UI", Arial, Helvetica, sans-serif;
 }
 
-a {
-  color: inherit;
+@layer base {
+  a {
+    color: inherit;
+  }
 }
 
 /* Tabular numerals on every numeric value, without exception. */
