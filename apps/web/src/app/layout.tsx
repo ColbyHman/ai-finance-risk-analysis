@@ -10,7 +10,17 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col font-sans bg-[#191c1f] text-[#f4f4f4]">
+      <head>
+        {/* Apply the saved theme before first paint so there's no
+         * flash of the wrong theme on load. Runs synchronously,
+         * before React hydrates. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("finance-copilot-theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body className="min-h-full flex flex-col font-sans bg-[var(--bg)] text-[var(--ink)]">
         {children}
       </body>
     </html>
