@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Digest — pinned glance (6 max) + table for the rest</title>
+<style>
+  :root {
+    --slate-50:#f8fafc; --slate-100:#f1f5f9; --slate-200:#e2e8f0; --slate-300:#cbd5e1;
+    --slate-400:#94a3b8; --slate-500:#64748b; --slate-600:#475569; --slate-700:#334155; --slate-900:#0f172a;
+    --navy:#0f2340; --navy-light:#16365e;
+    --blue-50:#eff6ff; --blue-200:#bfdbfe; --blue-600:#2563eb; --blue-700:#1d4ed8;
+    --red-50:#fef2f2; --red-200:#fecaca; --red-500:#ef4444; --red-600:#dc2626; --red-700:#b91c1c;
+    --green-50:#f0fdf4; --green-200:#bbf7d0; --green-600:#16a34a; --green-700:#15803d;
+    --amber-50:#fffbeb; --amber-200:#fde68a; --amber-500:#f59e0b; --amber-600:#d97706;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, Helvetica, sans-serif; background: var(--slate-50); margin:0; color: var(--slate-900); }
+  .mono { font-family: "SF Mono", Consolas, monospace; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 22px 24px 48px; }
+  h1 { font-size: 17px; font-weight: 700; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .sub { font-size: 12.5px; color: var(--slate-500); margin: 0 0 20px; max-width: 640px; }
+
+  .section-head { display:flex; align-items:baseline; justify-content:space-between; margin-bottom: 12px; }
+  .eyebrow { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color: var(--slate-400); margin:0; }
+  .pin-count { font-size:11.5px; color: var(--slate-400); font-family: monospace; }
+
+  /* ---- pinned grid: always-visible glance, no click required ---- */
+  .pinned-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 30px; }
+  .pin-card { background:#fff; border:1px solid var(--slate-200); border-radius:14px; padding: 14px 16px 10px; box-shadow: 0 1px 3px rgba(15,23,42,.05); position:relative; }
+  .pin-top { display:flex; align-items:flex-start; justify-content:space-between; }
+  .pin-ticker { font-weight:700; font-size:15px; letter-spacing:-0.01em; }
+  .pin-weight { font-size:10.5px; color: var(--slate-400); font-family: monospace; margin-top:1px; }
+  .pin-icon { width:22px; height:22px; border-radius:6px; border:none; background: var(--slate-50); color: var(--slate-400); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .pin-icon.active { background: var(--amber-50); color: var(--amber-600); }
+  .pin-headline { font-size:12px; color: var(--slate-600); margin: 8px 0 8px; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height: 33px; }
+  .pin-chart { margin: 0 -4px; }
+  .pin-chart svg { width:100%; height:56px; display:block; }
+  .pin-foot { display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:8px; }
+
+  .sent-badge { display:inline-flex; align-items:center; gap:4px; border-radius: 999px; padding: 2px 8px 2px 4px; font-size:10.5px; font-weight:600; }
+  .sent-icon { width:14px; height:14px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; color:#fff; flex-shrink:0; }
+  .sent-up .sent-icon { background: var(--green-600); } .sent-up { background: var(--green-50); color: var(--green-700); }
+  .sent-down .sent-icon { background: var(--red-600); } .sent-down { background: var(--red-50); color: var(--red-700); }
+  .sent-flat .sent-icon { background: var(--slate-400); } .sent-flat { background: var(--slate-100); color: var(--slate-600); }
+  .tax-badge { display:inline-flex; align-items:center; gap:3px; border-radius: 999px; padding: 2px 7px; font-size:10.5px; font-weight:600; background: var(--blue-50); color: var(--blue-700); }
+
+  .empty-pin { border: 1.5px dashed var(--slate-200); border-radius:14px; display:flex; align-items:center; justify-content:center; color: var(--slate-300); font-size:12px; min-height: 148px; }
+
+  /* ---- rest-of-portfolio table ---- */
+  .card-shell { background:#fff; border:1px solid var(--slate-200); border-radius:14px; box-shadow: 0 1px 3px rgba(15,23,42,.05); overflow:hidden; }
+  table { width:100%; border-collapse: collapse; font-size: 13px; }
+  thead th { text-align:left; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color: var(--slate-400); background: var(--slate-50); padding: 10px 16px; border-bottom:1px solid var(--slate-200); }
+  tbody td { padding: 11px 16px; border-bottom: 1px solid var(--slate-100); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr.main-row { cursor:pointer; }
+  tbody tr.main-row:hover { background: var(--slate-50); }
+  .ticker-cell { font-weight:700; display:flex; align-items:center; gap:7px; }
+  .relevance-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .dot-high { background: var(--red-500); } .dot-medium { background: var(--amber-500); } .dot-low { background: var(--slate-300); }
+  .row-weight { font-family: monospace; font-size:11px; color: var(--slate-400); }
+  .row-headline { color: var(--slate-600); }
+  .pin-toggle-cell { text-align:right; }
+  .pin-toggle { border:none; background:none; color: var(--slate-300); font-size:13px; cursor:pointer; }
+  .pin-toggle:hover { color: var(--amber-500); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1>Research Digest — pinned + full list</h1>
+  <p class="sub">Up to 6 pinned holdings always visible at a glance, each with its own chart and signals — no click required. Everything else ranked in a compact table below; click a row for the full brief.</p>
+
+  <div class="section-head">
+    <p class="eyebrow">Pinned — always visible</p>
+    <span class="pin-count">4 / 6 pinned</span>
+  </div>
+  <div class="pinned-grid" id="pinnedGrid"></div>
+
+  <div class="section-head">
+    <p class="eyebrow">Everything else — ranked by relevance, click to review</p>
+  </div>
+  <div class="card-shell">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:90px;">Ticker</th>
+          <th>What changed</th>
+          <th style="width:90px;">Weight</th>
+          <th style="width:130px;">Sentiment</th>
+          <th style="width:140px;">Tax</th>
+          <th style="width:36px;"></th>
+        </tr>
+      </thead>
+      <tbody id="restTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const PINNED = [
+  { ticker: "AAPL", weight: "14.2%", headline: "Services revenue beat; two downgrades cite China demand", trend: [182,179,181,176,178,172,174,169], sentiment: { dir: "down", label: "Deteriorating" }, tax: "LT in 11d" },
+  { ticker: "NVDA", weight: "9.8%", headline: "Data-center order commentary stayed strong; chatter up 3x", trend: [410,418,405,430,448,440,462,470], sentiment: { dir: "up", label: "Improving" }, tax: null },
+  { ticker: "VTI", weight: "22.0%", headline: "No fund-level news — tracked for tax-lot timing only", trend: [268,269,270,271,270,272,273,274], sentiment: null, tax: "Wash-sale risk" },
+  { ticker: "TLT", weight: "8.5%", headline: "Fed minutes lean toward a slower cutting path, hits duration", trend: [92,91,90,89,88,87,86,85], sentiment: { dir: "down", label: "Deteriorating" }, tax: null },
+];
+
+const REST = [
+  { ticker: "SMCI", relevance: "low", weight: "2.1%", headline: "Smallest position, largest relative news volume this week", sentiment: { dir: "down", label: "Deteriorating" }, tax: "Short-term lot" },
+  { ticker: "MSFT", relevance: "low", weight: "6.3%", headline: "No material change this week", sentiment: null, tax: null },
+  { ticker: "COST", relevance: "medium", weight: "4.0%", headline: "Same-store sales ahead of estimates, membership fee hike holds", sentiment: { dir: "up", label: "Improving" }, tax: null },
+  { ticker: "XOM", relevance: "low", weight: "3.2%", headline: "Oil price pullback this week, in line with sector", sentiment: { dir: "flat", label: "Stable" }, tax: "LT in 40d" },
+  { ticker: "BND", relevance: "low", weight: "5.5%", headline: "Tracks TLT's duration-risk story, smaller magnitude", sentiment: { dir: "down", label: "Deteriorating" }, tax: null },
+  { ticker: "SCHD", relevance: "low", weight: "2.9%", headline: "No notable news this week", sentiment: null, tax: null },
+];
+
+function bigChart(values, w=280, h=56) {
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = max - min || 1;
+  const pts = values.map((v,i) => [ (i/(values.length-1))*w, h - 6 - ((v-min)/range)*(h-12) ]);
+  const line = pts.map((p,i) => (i===0?"M":"L") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const area = line + ` L ${w} ${h} L 0 ${h} Z`;
+  const up = values[values.length-1] >= values[0];
+  const stroke = up ? "#16a34a" : "#ef4444";
+  const gid = "g" + Math.random().toString(36).slice(2,7);
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${stroke}" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="${stroke}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${area}" fill="url(#${gid})"/>
+    <path d="${line}" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+function sentBadge(s) {
+  if (!s) return `<span style="font-size:10.5px;color:var(--slate-400);">no signal</span>`;
+  const cls = s.dir === "up" ? "sent-up" : s.dir === "down" ? "sent-down" : "sent-flat";
+  const arrow = s.dir === "up" ? "↑" : s.dir === "down" ? "↓" : "→";
+  return `<span class="sent-badge ${cls}"><span class="sent-icon">${arrow}</span>${s.label}</span>`;
+}
+function taxBadge(t) { return t ? `<span class="tax-badge">⏱ ${t}</span>` : `<span style="color:var(--slate-300);font-size:11px;">—</span>`; }
+
+const grid = document.getElementById("pinnedGrid");
+PINNED.forEach(d => {
+  const card = document.createElement("div");
+  card.className = "pin-card";
+  card.innerHTML = `
+    <div class="pin-top">
+      <div><span class="pin-ticker">${d.ticker}</span><div class="pin-weight">${d.weight} of portfolio</div></div>
+      <button class="pin-icon active" title="Unpin">★</button>
+    </div>
+    <p class="pin-headline">${d.headline}</p>
+    <div class="pin-chart">${bigChart(d.trend)}</div>
+    <div class="pin-foot">${sentBadge(d.sentiment)}${taxBadge(d.tax)}</div>
+  `;
+  grid.appendChild(card);
+});
+for (let i = PINNED.length; i < 6; i++) {
+  const slot = document.createElement("div");
+  slot.className = "empty-pin";
+  slot.textContent = "+ Pin a holding to track it here";
+  grid.appendChild(slot);
+}
+
+const restTable = document.getElementById("restTable");
+REST.forEach(d => {
+  const dotCls = { high: "dot-high", medium: "dot-medium", low: "dot-low" }[d.relevance];
+  const tr = document.createElement("tr");
+  tr.className = "main-row";
+  tr.innerHTML = `
+    <td><span class="ticker-cell"><span class="relevance-dot ${dotCls}"></span>${d.ticker}</span></td>
+    <td class="row-headline">${d.headline}</td>
+    <td class="row-weight">${d.weight}</td>
+    <td>${sentBadge(d.sentiment)}</td>
+    <td>${taxBadge(d.tax)}</td>
+    <td class="pin-toggle-cell"><button class="pin-toggle" title="Pin">☆</button></td>
+  `;
+  restTable.appendChild(tr);
+});
+</script>
+</body>
+</html>
