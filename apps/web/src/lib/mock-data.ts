@@ -771,3 +771,449 @@ export const diversificationFlags: DiversificationFlag[] = [
     severity: "low",
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Research copilot: per-security "what changed" + portfolio-wide digest.
+// See docs/adr/0010-research-copilot-reframe.md. All synthetic, same
+// "mock data only" constraint as the rest of this file (ADR 0001).
+//
+// Hard guardrail from ADR 0010: nothing here is a rating or a
+// recommendation. News summaries describe what changed, not what to
+// do about it. Sentiment is a labeled signal with a stated basis
+// (never a bare 0-100 score framed as a rating). Tax-lot flags are
+// timing facts, not advice. Copy throughout uses "here's what
+// changed / here's why it might matter" framing, never "you should."
+// ---------------------------------------------------------------------------
+
+export interface NewsDigestEntry {
+  ticker: string;
+  headline: string;
+  /** What changed since the last time someone looked — a summary of
+   * the underlying coverage, not a raw headline list and not a take
+   * on what it means for the position. */
+  summary: string;
+  timestamp: string;
+  /** How many distinct sources contributed to this summary — a volume
+   * signal, not a credibility score. */
+  sourceCount: number;
+}
+
+export type SentimentDirection = "improving" | "deteriorating" | "stable";
+export type SentimentMagnitude = "slight" | "moderate" | "pronounced";
+
+export interface SentimentSignal {
+  ticker: string;
+  direction: SentimentDirection;
+  magnitude: SentimentMagnitude;
+  /** Where this read comes from — e.g. "analyst commentary tone",
+   * "social chatter volume". Always shown alongside the signal so it
+   * never reads as a bare, unexplained score. */
+  basis: string;
+  /** One sentence of why the basis moved, expandable detail — the
+   * "reasoning trail" ADR 0010 requires for every signal. */
+  detail: string;
+}
+
+export type TaxLotFlagType = "long-term-in-days" | "wash-sale-risk";
+
+export interface TaxLotFlag {
+  ticker: string;
+  lotId: string;
+  type: TaxLotFlagType;
+  /** Plain-English statement of the timing fact — never phrased as
+   * "you should sell/hold this lot." */
+  detail: string;
+  dueDate: string;
+  daysUntilDue: number;
+}
+
+export interface TrendSeriesPoint {
+  date: string;
+  price: number;
+  /** A normalized fundamental index (100 = the start of this window),
+   * illustrative only — not a real revenue/earnings series. */
+  fundamentalIndex: number;
+}
+
+export interface TrendSeries {
+  ticker: string;
+  windowLabel: string;
+  points: TrendSeriesPoint[];
+}
+
+// 180-day windows, sampled every 15 days (12 points) — longer than
+// the 30-day riskHistory charts elsewhere in securityProfiles, per
+// ADR 0010's "longer window than the current 30-day chart" ask.
+export const trendSeries: TrendSeries[] = [
+  {
+    ticker: "NVDA",
+    windowLabel: "180-day",
+    points: [
+      { date: "May 11", price: 108.2, fundamentalIndex: 100 },
+      { date: "May 26", price: 112.4, fundamentalIndex: 101 },
+      { date: "Jun 10", price: 118.9, fundamentalIndex: 103 },
+      { date: "Jun 25", price: 115.6, fundamentalIndex: 104 },
+      { date: "Jul 10", price: 121.3, fundamentalIndex: 106 },
+      { date: "Jul 25", price: 129.8, fundamentalIndex: 108 },
+      { date: "Aug 09", price: 126.1, fundamentalIndex: 109 },
+      { date: "Aug 24", price: 134.5, fundamentalIndex: 111 },
+      { date: "Sep 08", price: 141.2, fundamentalIndex: 113 },
+      { date: "Sep 23", price: 138.7, fundamentalIndex: 114 },
+      { date: "Oct 08", price: 146.9, fundamentalIndex: 116 },
+      { date: "Oct 23", price: 152.3, fundamentalIndex: 118 },
+    ],
+  },
+  {
+    ticker: "AAPL",
+    windowLabel: "180-day",
+    points: [
+      { date: "May 11", price: 189.4, fundamentalIndex: 100 },
+      { date: "May 26", price: 191.1, fundamentalIndex: 100 },
+      { date: "Jun 10", price: 187.8, fundamentalIndex: 101 },
+      { date: "Jun 25", price: 193.5, fundamentalIndex: 101 },
+      { date: "Jul 10", price: 196.2, fundamentalIndex: 102 },
+      { date: "Jul 25", price: 194.8, fundamentalIndex: 102 },
+      { date: "Aug 09", price: 198.1, fundamentalIndex: 103 },
+      { date: "Aug 24", price: 201.4, fundamentalIndex: 103 },
+      { date: "Sep 08", price: 199.7, fundamentalIndex: 104 },
+      { date: "Sep 23", price: 203.9, fundamentalIndex: 104 },
+      { date: "Oct 08", price: 206.5, fundamentalIndex: 105 },
+      { date: "Oct 23", price: 208.2, fundamentalIndex: 105 },
+    ],
+  },
+  {
+    ticker: "MSFT",
+    windowLabel: "180-day",
+    points: [
+      { date: "May 11", price: 412.3, fundamentalIndex: 100 },
+      { date: "May 26", price: 418.6, fundamentalIndex: 101 },
+      { date: "Jun 10", price: 415.2, fundamentalIndex: 102 },
+      { date: "Jun 25", price: 422.8, fundamentalIndex: 103 },
+      { date: "Jul 10", price: 429.4, fundamentalIndex: 104 },
+      { date: "Jul 25", price: 426.1, fundamentalIndex: 104 },
+      { date: "Aug 09", price: 433.7, fundamentalIndex: 105 },
+      { date: "Aug 24", price: 438.9, fundamentalIndex: 106 },
+      { date: "Sep 08", price: 435.2, fundamentalIndex: 106 },
+      { date: "Sep 23", price: 441.6, fundamentalIndex: 107 },
+      { date: "Oct 08", price: 447.3, fundamentalIndex: 108 },
+      { date: "Oct 23", price: 452.8, fundamentalIndex: 109 },
+    ],
+  },
+  {
+    ticker: "VTI",
+    windowLabel: "180-day",
+    points: [
+      { date: "May 11", price: 268.4, fundamentalIndex: 100 },
+      { date: "May 26", price: 270.1, fundamentalIndex: 101 },
+      { date: "Jun 10", price: 272.8, fundamentalIndex: 101 },
+      { date: "Jun 25", price: 271.5, fundamentalIndex: 102 },
+      { date: "Jul 10", price: 275.9, fundamentalIndex: 102 },
+      { date: "Jul 25", price: 278.3, fundamentalIndex: 103 },
+      { date: "Aug 09", price: 276.7, fundamentalIndex: 103 },
+      { date: "Aug 24", price: 280.4, fundamentalIndex: 104 },
+      { date: "Sep 08", price: 283.1, fundamentalIndex: 104 },
+      { date: "Sep 23", price: 281.6, fundamentalIndex: 105 },
+      { date: "Oct 08", price: 285.9, fundamentalIndex: 105 },
+      { date: "Oct 23", price: 288.2, fundamentalIndex: 106 },
+    ],
+  },
+  {
+    ticker: "VXUS",
+    windowLabel: "180-day",
+    points: [
+      { date: "May 11", price: 58.3, fundamentalIndex: 100 },
+      { date: "May 26", price: 58.9, fundamentalIndex: 100 },
+      { date: "Jun 10", price: 59.6, fundamentalIndex: 101 },
+      { date: "Jun 25", price: 59.1, fundamentalIndex: 101 },
+      { date: "Jul 10", price: 60.4, fundamentalIndex: 102 },
+      { date: "Jul 25", price: 61.2, fundamentalIndex: 102 },
+      { date: "Aug 09", price: 60.8, fundamentalIndex: 103 },
+      { date: "Aug 24", price: 61.9, fundamentalIndex: 103 },
+      { date: "Sep 08", price: 62.5, fundamentalIndex: 104 },
+      { date: "Sep 23", price: 62.1, fundamentalIndex: 104 },
+      { date: "Oct 08", price: 63.4, fundamentalIndex: 105 },
+      { date: "Oct 23", price: 64.1, fundamentalIndex: 105 },
+    ],
+  },
+  {
+    ticker: "BND",
+    windowLabel: "180-day",
+    points: [
+      { date: "May 11", price: 72.8, fundamentalIndex: 100 },
+      { date: "May 26", price: 72.5, fundamentalIndex: 100 },
+      { date: "Jun 10", price: 72.1, fundamentalIndex: 100 },
+      { date: "Jun 25", price: 71.9, fundamentalIndex: 99 },
+      { date: "Jul 10", price: 71.6, fundamentalIndex: 99 },
+      { date: "Jul 25", price: 71.8, fundamentalIndex: 99 },
+      { date: "Aug 09", price: 71.3, fundamentalIndex: 98 },
+      { date: "Aug 24", price: 70.9, fundamentalIndex: 98 },
+      { date: "Sep 08", price: 70.6, fundamentalIndex: 98 },
+      { date: "Sep 23", price: 70.8, fundamentalIndex: 97 },
+      { date: "Oct 08", price: 70.4, fundamentalIndex: 97 },
+      { date: "Oct 23", price: 70.1, fundamentalIndex: 97 },
+    ],
+  },
+];
+
+export interface FundamentalMetric {
+  label: string;
+  current: string;
+  ownHistoryAvg: string;
+  peerOrBenchmarkAvg: string;
+  note: string;
+}
+
+export interface FundamentalsSnapshot {
+  ticker: string;
+  peerOrBenchmarkLabel: string;
+  metrics: FundamentalMetric[];
+}
+
+// A snapshot vs. each security's own history and a peer/benchmark —
+// illustrative figures, not a live fundamentals feed. Framed as
+// context ("here's where this sits"), not a verdict.
+export const fundamentalsSnapshots: FundamentalsSnapshot[] = [
+  {
+    ticker: "NVDA",
+    peerOrBenchmarkLabel: "Semiconductor peers (AMD, AVGO, TSM)",
+    metrics: [
+      { label: "P/E ratio", current: "42.1x", ownHistoryAvg: "38.6x (5-yr)", peerOrBenchmarkAvg: "31.4x", note: "Trading above both its own 5-year average and the peer group — has for most of the past 18 months." },
+      { label: "Revenue growth (YoY)", current: "+62%", ownHistoryAvg: "+48% (5-yr avg)", peerOrBenchmarkAvg: "+19%", note: "Growth well above its own historical pace and the peer group, concentrated in data-center demand." },
+      { label: "Operating margin", current: "58%", ownHistoryAvg: "49% (5-yr)", peerOrBenchmarkAvg: "32%", note: "Wider than peers — a function of pricing power in the current demand cycle, not guaranteed to persist." },
+    ],
+  },
+  {
+    ticker: "AAPL",
+    peerOrBenchmarkLabel: "Large-cap tech peers (MSFT, GOOGL)",
+    metrics: [
+      { label: "P/E ratio", current: "29.8x", ownHistoryAvg: "27.3x (5-yr)", peerOrBenchmarkAvg: "28.1x", note: "Close to the peer average, modestly above its own 5-year norm." },
+      { label: "Revenue growth (YoY)", current: "+6%", ownHistoryAvg: "+9% (5-yr avg)", peerOrBenchmarkAvg: "+13%", note: "Slower than its own historical pace and the peer group — services growth partially offsetting flatter hardware revenue." },
+      { label: "Operating margin", current: "31%", ownHistoryAvg: "29% (5-yr)", peerOrBenchmarkAvg: "27%", note: "Stable and above peer average." },
+    ],
+  },
+  {
+    ticker: "MSFT",
+    peerOrBenchmarkLabel: "Large-cap tech peers (AAPL, GOOGL)",
+    metrics: [
+      { label: "P/E ratio", current: "34.6x", ownHistoryAvg: "31.2x (5-yr)", peerOrBenchmarkAvg: "28.1x", note: "Above both its own history and peers, tracking cloud/AI-platform growth expectations." },
+      { label: "Revenue growth (YoY)", current: "+15%", ownHistoryAvg: "+13% (5-yr avg)", peerOrBenchmarkAvg: "+13%", note: "Modestly ahead of its own historical pace, in line with the faster-growing peer." },
+      { label: "Operating margin", current: "45%", ownHistoryAvg: "42% (5-yr)", peerOrBenchmarkAvg: "35%", note: "Wider than its own history and peers." },
+    ],
+  },
+  {
+    ticker: "VTI",
+    peerOrBenchmarkLabel: "S&P 500 (benchmark)",
+    metrics: [
+      { label: "Expense ratio", current: "0.03%", ownHistoryAvg: "0.03% (unchanged)", peerOrBenchmarkAvg: "0.04% (category avg)", note: "Unchanged, already at the low end for broad-market index funds." },
+      { label: "Trailing-12-month tracking difference", current: "-0.02%", ownHistoryAvg: "-0.02% (5-yr avg)", peerOrBenchmarkAvg: "n/a", note: "Tracks its target index closely, as expected for a total-market fund." },
+      { label: "Weighted avg P/E of holdings", current: "27.9x", ownHistoryAvg: "24.1x (5-yr)", peerOrBenchmarkAvg: "27.6x (S&P 500)", note: "In line with the broad market, above its own 5-year average alongside the broader market's re-rating." },
+    ],
+  },
+  {
+    ticker: "VXUS",
+    peerOrBenchmarkLabel: "MSCI ACWI ex-US (benchmark)",
+    metrics: [
+      { label: "Expense ratio", current: "0.08%", ownHistoryAvg: "0.08% (unchanged)", peerOrBenchmarkAvg: "0.11% (category avg)", note: "Below the category average for international index funds." },
+      { label: "Weighted avg P/E of holdings", current: "16.2x", ownHistoryAvg: "15.4x (5-yr)", peerOrBenchmarkAvg: "16.5x (benchmark)", note: "Modestly above its own 5-year average, roughly in line with its benchmark." },
+      { label: "Dividend yield", current: "2.6%", ownHistoryAvg: "2.8% (5-yr avg)", peerOrBenchmarkAvg: "2.7% (benchmark)", note: "Slightly below its own historical average." },
+    ],
+  },
+  {
+    ticker: "BND",
+    peerOrBenchmarkLabel: "Bloomberg U.S. Aggregate (benchmark)",
+    metrics: [
+      { label: "SEC yield", current: "4.4%", ownHistoryAvg: "3.1% (5-yr avg)", peerOrBenchmarkAvg: "4.3% (benchmark)", note: "Higher than its own 5-year average, reflecting the higher-rate environment of the past two years." },
+      { label: "Effective duration", current: "6.1 yrs", ownHistoryAvg: "6.3 yrs (5-yr avg)", peerOrBenchmarkAvg: "6.0 yrs (benchmark)", note: "In line with its own history and benchmark." },
+      { label: "Expense ratio", current: "0.03%", ownHistoryAvg: "0.03% (unchanged)", peerOrBenchmarkAvg: "0.04% (category avg)", note: "Below the category average for broad bond index funds." },
+    ],
+  },
+];
+
+export interface DigestInput {
+  ticker: string;
+  name: string;
+  /** Dollar exposure — drives the position-size factor in the
+   * relevance-ranking function (see lib/digest.ts). */
+  positionValue: number;
+  news: NewsDigestEntry;
+  sentiment: SentimentSignal;
+  taxFlag?: TaxLotFlag;
+  /** 0-1, illustrative — how much this holding contributes to the
+   * portfolio's concentration/diversification risk (see
+   * diversificationFlags / sectorExposure). Feeds the
+   * diversification-impact factor in the relevance score, it is not
+   * itself a rating of the security. */
+  diversificationImpact: number;
+}
+
+// Fixed "as of" reference time for the digest ranking — matches the
+// era of the news/sentiment timestamps below, so recency decays
+// deterministically regardless of the real wall-clock date the app
+// happens to be viewed on (same reproducibility reasoning as
+// portfolioAssumptions.seed in the retirement projection).
+export const digestReferenceTimestamp = "2026-11-07 12:00 UTC";
+
+// Raw inputs for the portfolio-wide "what changed" feed — ranking
+// (relevanceScore, sort order) is computed by lib/digest.ts, not
+// hardcoded here. See docs/adr/0010-research-copilot-reframe.md.
+export const digestInputs: DigestInput[] = [
+  {
+    ticker: "NVDA",
+    name: "NVIDIA Corp.",
+    positionValue: 1800,
+    news: {
+      ticker: "NVDA",
+      headline: "Cloud customers raised capex guidance, citing AI accelerator demand",
+      summary:
+        "Several major cloud providers raised full-year capital-expenditure guidance over the past week, with multiple analyst notes attributing a meaningful share of the increase to AI accelerator purchases. Nothing about this holding's position size or allocation has changed — this is coverage volume and tone, not a position event.",
+      timestamp: "2026-11-06 14:20 UTC",
+      sourceCount: 17,
+    },
+    sentiment: {
+      ticker: "NVDA",
+      direction: "improving",
+      magnitude: "moderate",
+      basis: "analyst commentary tone",
+      detail:
+        "Tone across sell-side notes referencing NVDA shifted more positive over the trailing 5 trading days, tracking the capex-guidance coverage above. This reflects a shift in how commentary is framed, not a price target, rating, or buy/sell call tracked here.",
+    },
+    taxFlag: {
+      ticker: "NVDA",
+      lotId: "NVDA-LOT-2",
+      type: "long-term-in-days",
+      detail:
+        "The lot opened 2025-11-19 crosses the one-year holding mark in 12 days, at which point any future sale of this specific lot would be taxed under long-term rather than short-term capital gains rules. A timing fact about this lot, not a suggestion to act on it.",
+      dueDate: "2026-11-19",
+      daysUntilDue: 12,
+    },
+    diversificationImpact: 0.95,
+  },
+  {
+    ticker: "MSFT",
+    name: "Microsoft Corp.",
+    positionValue: 1440,
+    news: {
+      ticker: "MSFT",
+      headline: "Cloud/AI-platform revenue mix drew renewed analyst attention ahead of earnings",
+      summary:
+        "Coverage over the past two weeks has focused on the growing share of revenue tied to cloud infrastructure and AI-platform services, ahead of the next scheduled earnings report. Several notes compared this mix shift to peers without a clear consensus view on its significance.",
+      timestamp: "2026-11-05 09:45 UTC",
+      sourceCount: 11,
+    },
+    sentiment: {
+      ticker: "MSFT",
+      direction: "stable",
+      magnitude: "slight",
+      basis: "analyst commentary tone",
+      detail:
+        "Commentary tone has been mixed and roughly balanced over the trailing 2 weeks — no clear positive or negative tilt, just elevated volume ahead of earnings.",
+    },
+    taxFlag: {
+      ticker: "MSFT",
+      lotId: "MSFT-LOT-1",
+      type: "wash-sale-risk",
+      detail:
+        "A different MSFT lot sold at a loss on 2026-10-14 was followed by this lot's purchase on 2026-10-29, inside the 30-day wash-sale window. Under IRS wash-sale rules that loss may be disallowed for the current tax year. A timing/recordkeeping fact to be aware of, not tax advice — consult a tax professional for how this applies to a real return.",
+      dueDate: "2026-11-13",
+      daysUntilDue: 6,
+    },
+    diversificationImpact: 0.85,
+  },
+  {
+    ticker: "AAPL",
+    name: "Apple Inc.",
+    positionValue: 2160,
+    news: {
+      ticker: "AAPL",
+      headline: "Services-segment commentary ahead of the next earnings window",
+      summary:
+        "Coverage over the past week has centered on services-segment growth expectations heading into the next earnings report, with a handful of notes also referencing softer unit-volume estimates for hardware. Volume of coverage is in line with Apple's typical pre-earnings pattern.",
+      timestamp: "2026-11-04 11:10 UTC",
+      sourceCount: 9,
+    },
+    sentiment: {
+      ticker: "AAPL",
+      direction: "stable",
+      magnitude: "slight",
+      basis: "social chatter volume",
+      detail:
+        "Retail/social discussion volume about AAPL is essentially flat versus the trailing 90-day average — no notable spike or drop in how often this name comes up.",
+    },
+    diversificationImpact: 0.8,
+  },
+  {
+    ticker: "VTI",
+    name: "Vanguard Total Stock Market ETF",
+    positionValue: 5400,
+    news: {
+      ticker: "VTI",
+      headline: "Broad-market fund flows and sector-weighting commentary",
+      summary:
+        "Coverage this period has been mostly about broad US-equity fund flows and index-provider commentary on sector weighting drift, rather than anything specific to this fund. Technology's weight within the index has ticked up slightly over the trailing quarter.",
+      timestamp: "2026-11-03 16:00 UTC",
+      sourceCount: 6,
+    },
+    sentiment: {
+      ticker: "VTI",
+      direction: "stable",
+      magnitude: "slight",
+      basis: "analyst commentary tone",
+      detail:
+        "Commentary volume specific to this fund is low and tone has been neutral — most of what's circulating is broad-market, not fund-specific.",
+    },
+    taxFlag: {
+      ticker: "VTI",
+      lotId: "VTI-LOT-1",
+      type: "long-term-in-days",
+      detail:
+        "This lot (opened 2025-12-02) crosses the one-year holding mark in 25 days. A timing fact about this lot, not a suggestion to act on it.",
+      dueDate: "2026-12-02",
+      daysUntilDue: 25,
+    },
+    diversificationImpact: 0.55,
+  },
+  {
+    ticker: "VXUS",
+    name: "Vanguard Total International Stock ETF",
+    positionValue: 2700,
+    news: {
+      ticker: "VXUS",
+      headline: "International-markets commentary following a multi-week relative move",
+      summary:
+        "International developed and emerging markets have outpaced US markets over the trailing 6 weeks, drawing renewed commentary on international valuations relative to the US. Nothing specific to this fund's holdings has changed.",
+      timestamp: "2026-11-02 08:30 UTC",
+      sourceCount: 8,
+    },
+    sentiment: {
+      ticker: "VXUS",
+      direction: "improving",
+      magnitude: "slight",
+      basis: "analyst commentary tone",
+      detail:
+        "Commentary on international-equity valuations has leaned modestly more constructive over the past 6 weeks, in step with the relative-performance move described above.",
+    },
+    diversificationImpact: 0.2,
+  },
+  {
+    ticker: "BND",
+    name: "Vanguard Total Bond Market ETF",
+    positionValue: 3600,
+    news: {
+      ticker: "BND",
+      headline: "Rate-path commentary following recent economic data",
+      summary:
+        "Recent economic data releases shifted market expectations for the pace of future rate changes, which commentary has tied to bond-fund price moves over the past two weeks. This fund's holdings and duration profile haven't changed.",
+      timestamp: "2026-11-01 13:15 UTC",
+      sourceCount: 10,
+    },
+    sentiment: {
+      ticker: "BND",
+      direction: "deteriorating",
+      magnitude: "slight",
+      basis: "analyst commentary tone",
+      detail:
+        "Commentary tone around near-term bond-price moves has leaned modestly more cautious over the past two weeks, tracking the rate-path data referenced above — a tone read on short-term price-moving commentary, not a credit or default signal.",
+    },
+    diversificationImpact: 0.1,
+  },
+];
