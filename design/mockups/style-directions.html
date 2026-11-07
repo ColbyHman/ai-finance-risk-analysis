@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Style directions — same content, three treatments</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background:#e5e5e5; font-family: -apple-system, "Segoe UI", Arial, sans-serif; }
+  .board { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:0; }
+  .panel { padding: 28px 22px; min-height: 900px; }
+  .panel-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin-bottom:18px; opacity:.6; }
+
+  /* ============ A: TRADING DESK DARK ============ */
+  .panel-a { background:#0b0e14; color:#e2e8f0; font-family: -apple-system, "Segoe UI", Arial, sans-serif; }
+  .panel-a .panel-label { color:#4ade80; }
+  .a-hero { margin-bottom:26px; }
+  .a-hero .lbl { font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin:0 0 6px; }
+  .a-hero .val { font-family: "SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; font-size:36px; font-weight:700; color:#f1f5f9; margin:0; }
+  .a-hero .chg { font-family: "SF Mono", Consolas, monospace; font-size:13px; color:#4ade80; margin-top:4px; }
+  .a-hero svg { width:100%; height:64px; margin-top:12px; }
+  .a-card { background: linear-gradient(180deg, #11151d 0%, #0d1016 100%); border:1px solid #1e2430; border-radius:10px; padding:16px 18px; position:relative; }
+  .a-card::before { content:""; position:absolute; left:0; top:12px; bottom:12px; width:3px; background: linear-gradient(180deg, #f87171, #ef4444); border-radius:0 2px 2px 0; }
+  .a-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; padding-left:10px; }
+  .a-ticker { font-family: "SF Mono", Consolas, monospace; font-weight:700; font-size:15px; color:#f1f5f9; letter-spacing:.02em; }
+  .a-status { font-family: "SF Mono", Consolas, monospace; font-size:10px; font-weight:700; letter-spacing:.08em; color:#f87171; background: rgba(248,113,113,.12); padding:3px 8px; border-radius:4px; text-transform:uppercase; }
+  .a-headline { font-size:13px; font-weight:600; color:#cbd5e1; margin:8px 0 6px; padding-left:10px; }
+  .a-summary { font-size:12px; color:#8d969e; line-height:1.55; margin:0 0 10px; padding-left:10px; }
+  .a-foot { display:flex; justify-content:space-between; align-items:center; padding-left:10px; }
+  .a-reason { font-size:10.5px; color:#4b5563; font-style:italic; font-family: "SF Mono", Consolas, monospace; }
+  .a-btn { font-family: "SF Mono", Consolas, monospace; font-size:11px; font-weight:700; color:#0b0e14; background:#4ade80; border:none; border-radius:4px; padding:5px 11px; text-transform:uppercase; letter-spacing:.04em; }
+
+  /* ============ B: INSTITUTIONAL PAPER ============ */
+  .panel-b { background:#f6f1e7; color:#241f18; }
+  .panel-b .panel-label { color:#8a6d3b; }
+  .b-hero { margin-bottom:28px; border-bottom: 1px solid #ddd3bd; padding-bottom:20px; }
+  .b-hero .lbl { font-family: Georgia, 'Times New Roman', serif; font-size:12px; color:#6b5f4a; letter-spacing:.02em; margin:0 0 6px; font-style:italic; }
+  .b-hero .val { font-family: Georgia, 'Times New Roman', serif; font-size:40px; font-weight:400; color:#241f18; margin:0; font-variant-numeric: tabular-nums; }
+  .b-hero .chg { font-family: Georgia, serif; font-size:14px; color:#2d5a3d; margin-top:4px; }
+  .b-hero svg { width:100%; height:60px; margin-top:14px; }
+  .b-card { background:#fcfaf5; border:1px solid #e3d9c2; border-radius:3px; padding:18px 20px; box-shadow: 0 1px 0 rgba(0,0,0,.03); }
+  .b-rule { border-top:1px solid #241f18; width:36px; margin-bottom:10px; }
+  .b-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+  .b-ticker { font-family: Georgia, serif; font-weight:700; font-size:18px; color:#241f18; }
+  .b-status { font-family: Georgia, serif; font-size:10.5px; font-weight:700; letter-spacing:.06em; color:#7a2e2e; text-transform:uppercase; border-bottom:1px solid #7a2e2e; padding-bottom:1px; }
+  .b-headline { font-family: Georgia, serif; font-size:14.5px; font-weight:700; color:#241f18; margin:6px 0 7px; line-height:1.4; }
+  .b-summary { font-family: Georgia, serif; font-size:13px; color:#4a4336; line-height:1.6; margin:0 0 12px; }
+  .b-foot { display:flex; justify-content:space-between; align-items:center; border-top:1px solid #e3d9c2; padding-top:10px; }
+  .b-reason { font-family: Georgia, serif; font-size:11px; color:#8a6d3b; font-style:italic; }
+  .b-btn { font-family: Georgia, serif; font-size:11.5px; font-weight:700; color:#241f18; background:transparent; border:1px solid #241f18; border-radius:0; padding:5px 12px; letter-spacing:.02em; }
+
+  /* ============ C: CONFIDENT FLAT (Revolut-inspired) ============ */
+  .panel-c { background:#191c1f; color:#f4f4f4; }
+  .panel-c .panel-label { color:#86efac; }
+  .c-hero { margin-bottom:26px; }
+  .c-hero .lbl { font-size:11px; color:#8d969e; letter-spacing:.02em; margin:0 0 4px; }
+  .c-hero .val { font-size:40px; font-weight:500; letter-spacing:-0.02em; color:#fff; margin:0; font-variant-numeric: tabular-nums; }
+  .c-hero .chg { font-size:14px; font-weight:600; color:#4ade80; margin-top:4px; }
+  .c-hero svg { width:100%; height:60px; margin-top:14px; }
+  .c-card { background:#20242a; border-radius:20px; padding:18px 20px; }
+  .c-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .c-ticker { font-weight:700; font-size:16px; color:#fff; letter-spacing:-0.01em; }
+  .c-status { font-size:10.5px; font-weight:700; letter-spacing:.03em; color:#191c1f; background:#f87171; padding:4px 10px; border-radius:999px; text-transform:uppercase; }
+  .c-headline { font-size:13.5px; font-weight:600; color:#f4f4f4; margin:8px 0 6px; }
+  .c-summary { font-size:12.5px; color:#9ba3ab; line-height:1.55; margin:0 0 12px; }
+  .c-foot { display:flex; justify-content:space-between; align-items:center; }
+  .c-reason { font-size:11px; color:#6b7280; font-style:italic; }
+  .c-btn { font-size:11.5px; font-weight:700; color:#191c1f; background:#f4f4f4; border:none; border-radius:999px; padding:7px 14px; }
+</style>
+</head>
+<body>
+<div class="board">
+
+  <div class="panel panel-a">
+    <p class="panel-label">A — Trading Desk Dark</p>
+    <div class="a-hero">
+      <p class="lbl">Total portfolio value</p>
+      <p class="val">$124,850</p>
+      <p class="chg">↑ +$480 (+0.39%) today</p>
+      <svg id="chartA" viewBox="0 0 400 64"></svg>
+    </div>
+    <div class="a-card">
+      <div class="a-top"><span class="a-ticker">AAPL</span><span class="a-status">Act</span></div>
+      <p class="a-headline">Two analyst downgrades cite China demand softness</p>
+      <p class="a-summary">Services revenue beat consensus, but two independent sell-side notes this week flagged a multi-quarter China risk.</p>
+      <div class="a-foot"><span class="a-reason">first negative shift in 5mo</span><button class="a-btn">Mark reviewed</button></div>
+    </div>
+  </div>
+
+  <div class="panel panel-b">
+    <p class="panel-label">B — Institutional Paper</p>
+    <div class="b-hero">
+      <p class="lbl">Total portfolio value</p>
+      <p class="val">$124,850</p>
+      <p class="chg">▲ +$480 (+0.39%) today</p>
+      <svg id="chartB" viewBox="0 0 400 60"></svg>
+    </div>
+    <div class="b-card">
+      <div class="b-rule"></div>
+      <div class="b-top"><span class="b-ticker">AAPL</span><span class="b-status">Act</span></div>
+      <p class="b-headline">Two analyst downgrades cite China demand softness</p>
+      <p class="b-summary">Services revenue beat consensus, but two independent sell-side notes this week flagged a multi-quarter China risk.</p>
+      <div class="b-foot"><span class="b-reason">First negative shift in 5 months</span><button class="b-btn">Mark reviewed</button></div>
+    </div>
+  </div>
+
+  <div class="panel panel-c">
+    <p class="panel-label">C — Confident Flat</p>
+    <div class="c-hero">
+      <p class="lbl">Total portfolio value</p>
+      <p class="val">$124,850</p>
+      <p class="chg">↑ +$480 (+0.39%) today</p>
+      <svg id="chartC" viewBox="0 0 400 60"></svg>
+    </div>
+    <div class="c-card">
+      <div class="c-top"><span class="c-ticker">AAPL</span><span class="c-status">Act</span></div>
+      <p class="c-headline">Two analyst downgrades cite China demand softness</p>
+      <p class="c-summary">Services revenue beat consensus, but two independent sell-side notes this week flagged a multi-quarter China risk.</p>
+      <div class="c-foot"><span class="c-reason">first negative shift in 5mo</span><button class="c-btn">Mark reviewed</button></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const PATH = [118400,119200,117800,120100,121400,119900,122600,123300,121800,124200,123600,124850];
+function area(id, w, h, stroke, glow) {
+  const min = Math.min(...PATH), max = Math.max(...PATH);
+  const range = max - min;
+  const pts = PATH.map((v,i) => [ (i/(PATH.length-1))*w, h - 4 - ((v-min)/range)*(h-8) ]);
+  const line = pts.map((p,i) => (i===0?"M":"L")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  const fill = line + ` L ${w} ${h} L 0 ${h} Z`;
+  const gid = "g"+id;
+  document.getElementById(id).innerHTML = `
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${stroke}" stop-opacity="${glow?0.35:0.18}"/><stop offset="100%" stop-color="${stroke}" stop-opacity="0"/></linearGradient></defs>
+    <path d="${fill}" fill="url(#${gid})"/>
+    <path d="${line}" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  `;
+}
+area("chartA", 400, 64, "#4ade80", true);
+area("chartB", 400, 60, "#2d5a3d", false);
+area("chartC", 400, 60, "#4ade80", true);
+</script>
+</body>
+</html>
