@@ -3,20 +3,14 @@ import Link from "next/link";
 export const siteNavLinks: { href: string; label: string }[] = [
   { href: "/", label: "Inbox" },
   { href: "/portfolio-health", label: "Portfolio Health" },
-  { href: "/securities", label: "Securities" },
-  { href: "/retirement", label: "Retirement" },
-  { href: "/scenarios", label: "Scenarios" },
-  { href: "/diversification", label: "Diversification" },
-  { href: "/actions", label: "Actions" },
 ];
 
 /**
  * Shared top nav — dark pill-tab style ported from the mockups'
  * <nav class="topnav">, per
- * docs/adr/0011-triage-inbox-visual-implementation.md. Kept wired to
- * every existing route (not just the 3 redesigned ones) so retirement/
- * scenarios/diversification/actions stay reachable now that `/` means
- * the triage inbox, not "the dashboard."
+ * docs/adr/0011-triage-inbox-visual-implementation.md. Only the two
+ * Finance Copilot pages remain (see docs/adr/0012-scope-narrowing.md) —
+ * the old risk-dashboard-era routes were removed, not just unlinked.
  */
 export function SiteNav({ current }: { current?: string }) {
   return (

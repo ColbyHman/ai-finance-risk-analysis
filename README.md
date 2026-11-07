@@ -1,22 +1,23 @@
-# AI Finance Risk Analysis — Research Copilot POC
+# Finance Copilot — Research Triage POC
 
-A proof-of-concept triage inbox illustrating what an AI-assisted
-personal-portfolio research copilot could look like for one
+A proof-of-concept AI-assisted portfolio research copilot for one
 hypothetical early-career retirement investor: age 25, a $18,000
-brokerage account (7 holdings — NVDA, AAPL, MSFT, VTI, VXUS, BND,
-Cash), contributing $600/month toward a $1.5M goal at 65.
+brokerage account across 7 holdings — NVDA, AAPL, MSFT, VTI, VXUS, BND,
+Cash.
 
-The app is built around a triage-first workflow, not a static risk
-dashboard: what needs attention right now, with every claim traceable
-to a source, plus the separate questions a long-term investor actually
-asks (am I on track, what could go wrong, how is it doing, what should
-I do). Visual system is a dark "Confident Flat" theme — see
+The app is a triage-first workflow, not a static risk dashboard: what
+needs attention right now, with every claim traceable to a source.
+Visual system is a dark "Confident Flat" theme — see
 [`docs/adr/0011-triage-inbox-visual-implementation.md`](docs/adr/0011-triage-inbox-visual-implementation.md)
-for the full build record and
+for the build record,
+[`docs/adr/0012-scope-narrowing.md`](docs/adr/0012-scope-narrowing.md)
+for why the app is now exactly three pages (it used to carry five
+unrelated risk-dashboard-era routes under the old "AI Finance Risk
+Analysis" name, since removed), and
 [`design/mockups/clickable-triage.html`](design/mockups/clickable-triage.html),
 [`clickable-health.html`](design/mockups/clickable-health.html), and
 [`clickable-detail.html`](design/mockups/clickable-detail.html) for the
-literal approved spec these pages implement.
+literal approved spec these three pages implement.
 
 - **What needs my attention?** ([`/`](apps/web/src/app/page.tsx), the
   landing page — "Inbox" in the nav) — every holding grouped into
@@ -48,39 +49,20 @@ literal approved spec these pages implement.
   (raw excerpt, source-quality tag, model classification). Covers all
   7 holdings, including the two low-activity index funds and Cash,
   which render minimal pages rather than breaking.
-- **Am I on track?** ([`/retirement`](apps/web/src/app/retirement/page.tsx)) —
-  a seeded Monte Carlo projection to age 65 (10th/50th/90th percentile
-  fan chart against the goal), with live sliders for contribution and
-  retirement age.
-- **What could go wrong?** ([`/scenarios`](apps/web/src/app/scenarios/page.tsx)) —
-  2008/2020/2022-style drawdowns replayed against this persona's actual
-  allocation, with a toggle comparing the same shock against a
-  hypothetical 58-year-old pre-retiree to show why horizon matters.
-- **How concentrated is this, really?** ([`/diversification`](apps/web/src/app/diversification/page.tsx)) —
-  a diversification score, asset allocation, and effective sector
-  exposure once index funds are looked through (direct holdings vs.
-  via index funds).
-- **What should I do?** ([`/actions`](apps/web/src/app/actions/page.tsx)) —
-  three ranked, single-lever suggestions (each with a before/after on
-  tech exposure and on the pessimistic-case outcome at 65), plus what
-  fee drag costs over 40 years even on a low-cost portfolio.
 
 **This is a POC with no backend, no data pipeline, and no real data.**
 Everything on screen is synthetic/mock data defined in
-[`apps/web/src/lib/mock-data.ts`](apps/web/src/lib/mock-data.ts) and
+[`apps/web/src/lib/mock-data.ts`](apps/web/src/lib/mock-data.ts) (news/
+sentiment/tax-flag fixtures feeding the relevance ranking) and
 [`apps/web/src/lib/triage.ts`](apps/web/src/lib/triage.ts) (the inbox,
-Portfolio Health, and holding-detail fixtures — content copied
-verbatim from the approved mockups, not invented). See
+Portfolio Health, and holding-detail content — copied verbatim from the
+approved mockups, not invented). See
 [`docs/adr/0001-poc-scope-no-plumbing.md`](docs/adr/0001-poc-scope-no-plumbing.md)
-for why, and the rest of [`docs/adr/`](docs/adr/) for the decisions
-behind this build —
-[`docs/adr/0009-retirement-persona-and-projection.md`](docs/adr/0009-retirement-persona-and-projection.md)
-documents the persona and every modeling assumption behind the
-projection, scenario replay, and suggested-action math, and
-[`docs/adr/0010-research-copilot-reframe.md`](docs/adr/0010-research-copilot-reframe.md) /
-[`docs/adr/0011-triage-inbox-visual-implementation.md`](docs/adr/0011-triage-inbox-visual-implementation.md)
-document the triage-queue product shape and its final visual
-implementation, respectively.
+for why, and the rest of [`docs/adr/`](docs/adr/) for the full decision
+history — including ADRs 0002-0009, which cover product directions
+(retirement projection, scenario replay, diversification scoring) that
+were built, then removed per ADR 0012; those ADRs are left unedited as
+a historical record, not retconned.
 
 ## Screenshots
 
@@ -108,29 +90,6 @@ Holding detail — a citation's "show your work" drawer open:
 
 ![Security detail — NVDA, source drawer](docs/screenshots/security-detail-nvda-drawer.png)
 
-Am I on track? — retirement projection with live sliders:
-
-![Retirement projection](docs/screenshots/retirement.png)
-
-What could go wrong? — historical drawdown replay with horizon comparison:
-
-![Scenario replay](docs/screenshots/scenarios.png)
-
-What should I do? — ranked suggested actions and fee drag:
-
-![Suggested actions](docs/screenshots/actions.png)
-
-Per-security view — every holding ranked by AI risk score, with model confidence:
-
-![Securities — list](docs/screenshots/securities-list.png)
-
-Diversification risk — the portfolio-level view: a diversification
-score, asset allocation, effective sector exposure once index funds
-are looked through (direct holdings vs. via index funds), and what
-the AI flagged:
-
-![Diversification risk](docs/screenshots/diversification.png)
-
 ## Structure
 
 ```
@@ -139,17 +98,12 @@ ai-finance-risk-analysis/
 │   └── web/              # Next.js (App Router) app
 │       └── src/
 │           ├── app/              # page.tsx (inbox), portfolio-health/,
-│           │                     # retirement/, scenarios/, actions/, securities/,
-│           │                     # diversification/, digest/ (redirects to /)
-│           ├── components/       # HoldingDetailView, SiteNav, RiskBadge,
-│           │                     # RetirementProjection, ScenarioExplorer,
-│           │                     # SuggestedActions, DiversificationCharts,
-│           │                     # DiversificationScoreCard
+│           │                     # securities/[ticker]/  — exactly 3 routes
+│           ├── components/       # HoldingDetailView, SiteNav
 │           └── lib/
-│               ├── mock-data.ts  # persona, projection, diversification mock data
-│               ├── triage.ts     # inbox, Portfolio Health, holding-detail mock data
-│               ├── projection.ts # seeded Monte Carlo + scenario/fee-drag math
-│               └── digest.ts     # pure relevance-ranking function, reused by triage.ts
+│               ├── mock-data.ts  # persona + news/sentiment/tax-flag fixtures
+│               ├── triage.ts     # inbox, Portfolio Health, holding-detail data
+│               └── digest.ts     # pure relevance-ranking function
 ├── design/
 │   └── mockups/           # approved static-HTML design mockups (reference only,
 │                           # not shipped code) — clickable-triage.html,
@@ -179,9 +133,7 @@ npm run start --workspace=apps/web
 ## Tech
 
 - [Next.js](https://nextjs.org) 16 (App Router, TypeScript, Tailwind CSS v4)
-- [Recharts](https://recharts.org) for the retirement/scenario/diversification charts;
-  the inbox, Portfolio Health, and holding-detail pages draw their own
-  inline SVG sparklines/area charts per the approved mockups
-- [lucide-react](https://lucide.dev) for icons on the untouched routes
+- All charts (hero value, holdings sparklines, mover cards) are inline
+  SVG per the approved mockups — no charting library dependency
 
 See [`docs/adr/`](docs/adr/) for the reasoning behind each of these choices.
