@@ -4,6 +4,8 @@ import { securityProfiles } from "@/lib/mock-data";
 import { RiskBadge } from "@/components/RiskBadge";
 import { AIAnalysisPanel } from "@/components/AIAnalysisPanel";
 import { RiskHistoryChart } from "@/components/RiskHistoryChart";
+import { SecurityBrief } from "@/components/SecurityBrief";
+import { SiteNav } from "@/components/SiteNav";
 import { ShieldAlert } from "lucide-react";
 
 export function generateStaticParams() {
@@ -27,22 +29,25 @@ export default async function SecurityDetailPage({
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          <Link href="/" className="flex items-center gap-3">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-6 py-5">
+          <Link href="/digest" className="flex items-center gap-3">
             <ShieldAlert className="h-7 w-7 text-blue-600" />
             <div>
               <h1 className="text-lg font-semibold text-slate-900">
                 AI Finance Risk Analysis
               </h1>
-              <p className="text-xs text-slate-500">Per-Security View</p>
+              <p className="text-xs text-slate-500">Per-Security Brief</p>
             </div>
           </Link>
-          <Link
-            href="/securities"
-            className="text-sm font-medium text-blue-600 hover:text-blue-700"
-          >
-            ← All securities
-          </Link>
+          <div className="flex items-center gap-4">
+            <SiteNav current="/securities" />
+            <Link
+              href="/securities"
+              className="text-sm font-medium text-blue-600 hover:text-blue-700"
+            >
+              ← All securities
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -70,11 +75,14 @@ export default async function SecurityDetailPage({
         </div>
 
         <AIAnalysisPanel security={security} />
+
+        <SecurityBrief security={security} />
       </main>
 
       <footer className="mx-auto max-w-7xl px-6 pb-8 text-xs text-slate-400">
         POC · all figures are synthetic mock data illustrating the concept —
-        see docs/adr/0006-per-security-comparison-view.md.
+        see docs/adr/0006-per-security-comparison-view.md and
+        docs/adr/0010-research-copilot-reframe.md.
       </footer>
     </div>
   );
