@@ -1,231 +1,288 @@
-import { SummaryCard } from "@/components/SummaryCard";
-import { ExposureChart, RiskTrendChart } from "@/components/RiskCharts";
-import { TopContributorsTable } from "@/components/TopContributorsTable";
-import { AnomalyFeed } from "@/components/AnomalyFeed";
-import { drawdownScenarios, persona, portfolioAssumptions, summaryMetrics } from "@/lib/mock-data";
-import { probabilityOfGoal, runProjection } from "@/lib/projection";
-import { ShieldAlert, Network, TrendingUp } from "lucide-react";
-import Link from "next/link";
-import { SiteNav } from "@/components/SiteNav";
+"use client";
 
-function formatCompactDollars(v: number): string {
-  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`;
-  if (v >= 1_000) return `$${Math.round(v / 1000)}K`;
-  return `$${Math.round(v)}`;
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import { TopNav } from "@/components/SiteNav";
+import {
+  healthHoldings,
+  healthQueueStatus,
+  benchmarkPath,
+  portfolioByTimeframe,
+  riskContext,
+  type Timeframe,
+} from "@/lib/triage";
+
+const TIMEFRAMES: Timeframe[] = ["1D", "1W", "1M", "YTD", "1Y"];
+
+const ALLOC_COLORS: Record<string, string> = {
+  NVDA: "#4ade80",
+  AAPL: "#60a5fa",
+  MSFT: "#38bdf8",
+  VTI: "#f4f4f4",
+  VXUS: "#9ba3ab",
+  BND: "#6b7280",
+  Cash: "#3f454d",
+};
+
+function miniLine(values: number[], w: number, h: number): string {
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const pts = values.map((v, i) => [(i / (values.length - 1)) * w, h - 3 - ((v - min) / range) * (h - 6)]);
+  return pts.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ");
 }
 
 export default function PortfolioHealthPage() {
-  // The teaser banner's numbers are the baseline persona (no slider
-  // input) — the interactive version lives on /retirement. Computed
-  // server-side since runProjection is a pure, seeded function; same
-  // result either side.
-  const common = {
-    currentAge: persona.age,
-    retirementAge: persona.retirementAge,
-    currentBalance: persona.currentBalance,
-    annualContribution: persona.monthlyContribution * 12,
-    expectedRealReturn: portfolioAssumptions.blendedRealReturn,
-    volatility: portfolioAssumptions.blendedVolatility,
-    seed: portfolioAssumptions.seed,
-    pathCount: portfolioAssumptions.pathCount,
-  };
-  const baseline = runProjection(common);
-  const medianAtRetirement = baseline.points[baseline.points.length - 1]?.p50 ?? 0;
-  const goalProbability = probabilityOfGoal(baseline.finalValuesSorted, persona.goalAtRetirement);
+  const [tf, setTf] = useState<Timeframe>("YTD");
+  const d = portfolioByTimeframe[tf];
+  const up = d.changeAbs >= 0;
+  // Up/down color-flip bug fix carried over from the mockup: the hero
+  // chart's accent follows the ACTUAL sign of the change for the
+  // selected timeframe, never a hardcoded color.
+  const accent = up ? "#4ade80" : "#f87171";
 
-  // Headline "worst-case" figure: whichever historical-style scenario
-  // does the most damage to the median age-65 outcome, replayed as
-  // year 1 (see /scenarios). Long-horizon-relevant in a way 1-day VaR
-  // isn't — this is what the dashboard leads with instead.
-  const baselineFinal = medianAtRetirement;
-  let worstScenario = drawdownScenarios[0];
-  let worstPctImpact = 0;
-  for (const s of drawdownScenarios) {
-    const shocked = runProjection({ ...common, firstYearShock: s.peakToTroughPct });
-    const shockedFinal = shocked.points[shocked.points.length - 1]?.p50 ?? 0;
-    const pctImpact = baselineFinal > 0 ? (baselineFinal - shockedFinal) / baselineFinal : 0;
-    if (pctImpact > worstPctImpact) {
-      worstPctImpact = pctImpact;
-      worstScenario = s;
-    }
-  }
+  const chart = useMemo(() => {
+    const w = 700;
+    const h = 110;
+    const benchPath = benchmarkPath.slice(-d.path.length);
+    const min = Math.min(...d.path, ...benchPath);
+    const max = Math.max(...d.path, ...benchPath);
+    const range = max - min || 1;
+    const toPts = (vals: number[]) =>
+      vals.map((v, i) => [(i / (vals.length - 1)) * w, h - 3 - ((v - min) / range) * (h - 6)]);
+    const portLine = toPts(d.path)
+      .map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`)
+      .join(" ");
+    const benchLine = toPts(benchPath)
+      .map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`)
+      .join(" ");
+    const area = `${portLine} L ${w} ${h} L 0 ${h} Z`;
+    return { portLine, benchLine, area };
+  }, [d]);
+
+  const movers = [...healthHoldings]
+    .filter((h) => h.ticker !== "Cash")
+    .sort((a, b) => Math.abs(b.d1) - Math.abs(a.d1))
+    .slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-6 py-5">
-          <Link href="/digest" className="flex items-center gap-3">
-            <ShieldAlert className="h-7 w-7 text-blue-600" />
-            <div>
-              <h1 className="text-lg font-semibold text-slate-900">
-                AI Finance Risk Analysis
-              </h1>
-              <p className="text-xs text-slate-500">
-                Portfolio Health · Proof of Concept
-              </p>
-            </div>
-          </Link>
-          <div className="flex items-center gap-4">
-            <SiteNav current="/portfolio-health" />
-            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-200">
-              Demo data — not a live feed
-            </span>
+    <div className="min-h-screen">
+      <TopNav current="/portfolio-health" />
+      <div className="mx-auto max-w-[1020px] px-6 pb-[60px]">
+        <div className="mt-[18px] mb-5 flex items-start justify-between">
+          <div>
+            <h1 className="m-0 mb-1 text-xl font-bold tracking-tight">Portfolio Health</h1>
+            <p className="m-0 max-w-[480px] text-xs text-[#9ba3ab]">
+              Quick glance at performance — separate from the triage inbox on purpose.
+            </p>
           </div>
         </div>
-      </header>
 
-      <main className="mx-auto max-w-7xl space-y-6 px-6 py-8">
-        <div>
-          <h2 className="text-xl font-semibold text-slate-900">Portfolio Health</h2>
-          <p className="mt-1 max-w-3xl text-sm text-slate-600">
-            The risk-in-the-abstract view: am I on track, what could go wrong,
-            why is each flag raised, what should I do. For what&apos;s actually
-            changed across these holdings recently — news, sentiment, tax-lot
-            timing — see{" "}
-            <Link href="/digest" className="text-blue-600 hover:underline">
-              the digest
-            </Link>
-            .
-          </p>
-        </div>
-
-        <section className="rounded-xl border border-blue-200 bg-blue-50/50 p-5 shadow-sm">
+        <div className="mb-5 rounded-3xl bg-[#20242a] px-7 py-[26px]">
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <TrendingUp className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
-              <div>
-                <h2 className="text-sm font-semibold text-slate-900">
-                  Am I on track for retirement at {persona.retirementAge}?
-                </h2>
-                <p className="mt-1 max-w-2xl text-sm text-slate-600">
-                  Age {persona.age} today, ${persona.monthlyContribution}/mo, projected to a
-                  median of <strong>{formatCompactDollars(medianAtRetirement)}</strong> by age{" "}
-                  {persona.retirementAge}.
-                </p>
+            <div>
+              <p className="m-0 mb-1 flex items-center gap-2 text-[11.5px] text-[#6b7280]">
+                Total portfolio value{" "}
+                <span className="font-mono text-[10.5px] tabular-nums text-[#6b7280] opacity-70">
+                  as of 10:42 AM ET
+                </span>
+              </p>
+              <p className="m-0 font-mono text-[40px] font-medium tabular-nums tracking-tight text-white">
+                ${d.value.toLocaleString()}
+              </p>
+              <div
+                className={`mt-1.5 flex items-center gap-1.5 text-[15px] font-semibold ${
+                  up ? "text-[#4ade80]" : "text-[#f87171]"
+                }`}
+              >
+                <span className="font-mono tabular-nums">
+                  {up ? "↑" : "↓"} ${Math.abs(d.changeAbs).toLocaleString()} ({up ? "+" : ""}
+                  {d.changePct}%) {tf}
+                </span>
               </div>
             </div>
-            <Link
-              href="/retirement"
-              className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-              See the full projection →
-            </Link>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-white px-4 py-3 ring-1 ring-inset ring-blue-100">
-              <p className="text-xs text-slate-500">Probability of reaching the goal</p>
-              <p className="text-2xl font-bold text-blue-900">{Math.round(goalProbability * 100)}%</p>
-            </div>
-            <div className="rounded-lg bg-white px-4 py-3 ring-1 ring-inset ring-blue-100">
-              <p className="text-xs text-slate-500">
-                Worst-case historical shock ({worstScenario.label.replace(/^\d{4}\s*/, "")})
-              </p>
-              <p className="text-2xl font-bold text-red-700">
-                -{Math.round(worstPctImpact * 100)}% to age-65 outcome
-              </p>
+            <div className="flex gap-0.5 rounded-full bg-[#262b32] p-1">
+              {TIMEFRAMES.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTf(t)}
+                  className={`rounded-full px-3.5 py-1.5 text-[11.5px] font-bold ${
+                    tf === t ? "bg-white text-[#191c1f]" : "text-[#6b7280]"
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
             </div>
           </div>
-        </section>
-
-        <section className="rounded-xl border border-red-200 bg-red-50/50 p-5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-900">
-                What could go wrong? Scenario replay available
-              </h3>
-              <p className="mt-1 max-w-2xl text-sm text-slate-600">
-                See how 2008, 2020, and 2022-style drawdowns would hit this
-                portfolio today — and why the same shock matters far less at
-                age 25 than it would for someone 7 years from retirement.
-              </p>
+          <div className="mt-5">
+            <svg viewBox="0 0 700 110" preserveAspectRatio="none" className="h-[110px] w-full block">
+              <defs>
+                <linearGradient id={`hg-${tf}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={accent} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={accent} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <path d={chart.area} fill={`url(#hg-${tf})`} />
+              <path d={chart.benchLine} fill="none" stroke="#4b5563" strokeWidth={1.5} strokeDasharray="4 3" />
+              <path d={chart.portLine} fill="none" stroke={accent} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <div className="mt-1.5 flex justify-between font-mono text-[10.5px] text-[#6b7280]">
+              <span>{tf} ago</span>
+              <span>— vs. a blended benchmark (dashed)</span>
+              <span>today</span>
             </div>
-            <Link
-              href="/scenarios"
-              className="shrink-0 text-sm font-medium text-blue-600 hover:text-blue-700"
-            >
-              Explore scenarios →
-            </Link>
           </div>
-        </section>
+        </div>
 
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <ExposureChart />
-          <RiskTrendChart />
-        </section>
-
-        <section className="rounded-xl border border-amber-200 bg-amber-50/50 p-5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <Network className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900">
-                  Diversification risk: moderate concentration flagged
-                </h3>
-                <p className="mt-1 max-w-2xl text-sm text-slate-600">
-                  Seven holdings, five asset classes — looks diversified. Once
-                  index funds are unpacked into their own sector weightings,
-                  technology alone is an estimated 41% of the portfolio.
-                </p>
+        <p className="mb-3 text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#6b7280]">
+          Biggest movers this period
+        </p>
+        <div className="mb-5 flex gap-3">
+          {movers.map((h) => {
+            const moverUp = h.d1 > 0;
+            const status = healthQueueStatus[h.ticker];
+            const linkText = status ? `${status} in the inbox →` : "See its brief →";
+            return (
+              <div key={h.ticker} className="flex-1 rounded-[20px] bg-[#20242a] px-[18px] py-4">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-sm font-bold text-white">{h.ticker}</span>
+                  <span
+                    className={`font-mono text-sm font-bold tabular-nums ${
+                      moverUp ? "text-[#4ade80]" : h.d1 < 0 ? "text-[#f87171]" : ""
+                    }`}
+                  >
+                    {h.d1 > 0 ? "+" : ""}
+                    {h.d1}%
+                  </span>
+                </div>
+                <p className="mt-0.5 mb-2.5 text-[10.5px] text-[#6b7280]">today&apos;s move</p>
+                <Link
+                  href={`/securities/${h.ticker}`}
+                  className="inline-flex items-center gap-[3px] rounded-full bg-white px-[11px] py-[5px] text-[11.5px] font-bold text-[#191c1f] no-underline"
+                >
+                  {linkText}
+                </Link>
               </div>
+            );
+          })}
+        </div>
+
+        <p className="mb-3 text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#6b7280]">
+          Holdings — price and return <span className="font-normal normal-case tracking-normal">(click a row for its brief)</span>
+        </p>
+        <div className="mb-5 overflow-hidden rounded-[20px] bg-[#20242a]">
+          <table className="w-full border-collapse text-[13px]">
+            <thead>
+              <tr>
+                <th className="px-5 pb-2.5 pt-3.5 text-left text-[10.5px] font-bold uppercase tracking-[0.05em] text-[#6b7280]" style={{ width: 80 }}>
+                  Ticker
+                </th>
+                <th className="px-5 pb-2.5 pt-3.5 text-left text-[10.5px] font-bold uppercase tracking-[0.05em] text-[#6b7280]" style={{ width: 80 }}>
+                  Weight
+                </th>
+                <th className="px-5 pb-2.5 pt-3.5 text-left text-[10.5px] font-bold uppercase tracking-[0.05em] text-[#6b7280]" style={{ width: 100 }}>
+                  Price
+                </th>
+                <th className="px-5 pb-2.5 pt-3.5 text-left text-[10.5px] font-bold uppercase tracking-[0.05em] text-[#6b7280]" style={{ width: 90 }}>
+                  1D
+                </th>
+                <th className="px-5 pb-2.5 pt-3.5 text-left text-[10.5px] font-bold uppercase tracking-[0.05em] text-[#6b7280]" style={{ width: 90 }}>
+                  YTD
+                </th>
+                <th className="px-5 pb-2.5 pt-3.5 text-left text-[10.5px] font-bold uppercase tracking-[0.05em] text-[#6b7280]" style={{ width: 90 }}>
+                  30-day
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {healthHoldings.map((h) => {
+                const rowUp = h.trend[h.trend.length - 1] >= h.trend[0];
+                const stroke = rowUp ? "#4ade80" : "#f87171";
+                return (
+                  <tr
+                    key={h.ticker}
+                    className="cursor-pointer hover:bg-[#262b32]"
+                    onClick={() => {
+                      window.location.href = `/securities/${h.ticker}`;
+                    }}
+                  >
+                    <td className="border-t border-[#2d333b] px-5 py-[11px] font-bold">{h.ticker}</td>
+                    <td className="border-t border-[#2d333b] px-5 py-[11px] font-mono text-[11.5px] tabular-nums text-[#6b7280]">
+                      {h.weight}%
+                    </td>
+                    <td className="border-t border-[#2d333b] px-5 py-[11px] font-mono text-[12.5px] tabular-nums text-[#9ba3ab]">
+                      ${h.price.toFixed(2)}
+                    </td>
+                    <td
+                      className={`border-t border-[#2d333b] px-5 py-[11px] font-mono text-[12.5px] font-semibold tabular-nums ${
+                        h.d1 > 0 ? "text-[#4ade80]" : h.d1 < 0 ? "text-[#f87171]" : ""
+                      }`}
+                    >
+                      {h.d1 > 0 ? "+" : ""}
+                      {h.d1}%
+                    </td>
+                    <td
+                      className={`border-t border-[#2d333b] px-5 py-[11px] font-mono text-[12.5px] font-semibold tabular-nums ${
+                        h.ytd > 0 ? "text-[#4ade80]" : h.ytd < 0 ? "text-[#f87171]" : ""
+                      }`}
+                    >
+                      {h.ytd > 0 ? "+" : ""}
+                      {h.ytd}%
+                    </td>
+                    <td className="border-t border-[#2d333b] px-5 py-[11px]">
+                      <svg viewBox="0 0 64 24" className="block h-6 w-16">
+                        <path d={miniLine(h.trend, 64, 24)} fill="none" stroke={stroke} strokeWidth={1.6} strokeLinecap="round" />
+                      </svg>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+          <div className="rounded-[20px] bg-[#20242a] px-5 py-[18px]">
+            <p className="mb-1 text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#6b7280]">Allocation</p>
+            <div className="my-3 flex h-4 overflow-hidden rounded-full">
+              {healthHoldings.map((h) => (
+                <div key={h.ticker} style={{ width: `${h.weight}%`, background: ALLOC_COLORS[h.ticker] }} />
+              ))}
             </div>
-            <Link
-              href="/diversification"
-              className="shrink-0 text-sm font-medium text-blue-600 hover:text-blue-700"
-            >
-              View diversification analysis →
-            </Link>
-          </div>
-        </section>
-
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-          <div className="lg:col-span-3">
-            <TopContributorsTable />
-          </div>
-          <div className="lg:col-span-2">
-            <AnomalyFeed />
-          </div>
-        </section>
-
-        <section className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-900">
-                What should I do? Suggested actions available
-              </h3>
-              <p className="mt-1 max-w-2xl text-sm text-slate-600">
-                Three concrete, single-lever changes — each with a before/after on tech
-                exposure and on the pessimistic-case outcome at retirement — plus what fees
-                quietly cost over 40 years.
-              </p>
+            <div className="flex flex-wrap gap-2.5 text-[11px] text-[#9ba3ab]">
+              {healthHoldings.map((h) => (
+                <span key={h.ticker} className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-sm" style={{ background: ALLOC_COLORS[h.ticker] }} />
+                  {h.ticker} {h.weight}%
+                </span>
+              ))}
             </div>
-            <Link
-              href="/actions"
-              className="shrink-0 text-sm font-medium text-blue-600 hover:text-blue-700"
-            >
-              See suggested actions →
-            </Link>
           </div>
-        </section>
-
-        <section>
-          <p className="mb-2 text-xs font-medium text-slate-400">
-            Secondary metrics — short-horizon risk indicators, less relevant at a 40-year horizon
-            than the projection and scenario views above
-          </p>
-          <div className="grid grid-cols-2 gap-3 opacity-80 sm:grid-cols-4">
-            {summaryMetrics.map((metric) => (
-              <SummaryCard key={metric.label} metric={metric} compact />
-            ))}
+          <div className="rounded-[20px] bg-[#20242a] px-5 py-[18px]">
+            <p className="mb-1 text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#6b7280]">
+              Risk context{" "}
+              <span className="font-normal normal-case tracking-normal text-[#6b7280]">
+                — supporting, not actionable
+              </span>
+            </p>
+            <div className="flex justify-between border-b border-[#2d333b] py-2 text-xs">
+              <span className="text-[#9ba3ab]">Diversification score</span>
+              <span className="font-mono font-semibold tabular-nums">{riskContext.diversificationScore}</span>
+            </div>
+            <div className="flex justify-between border-b border-[#2d333b] py-2 text-xs">
+              <span className="text-[#9ba3ab]">30-day volatility</span>
+              <span className="font-mono font-semibold tabular-nums">{riskContext.volatility30d}</span>
+            </div>
+            <div className="flex justify-between py-2 text-xs">
+              <span className="text-[#9ba3ab]">Max drawdown (1Y)</span>
+              <span className="font-mono font-semibold tabular-nums">{riskContext.maxDrawdown1y}</span>
+            </div>
+            <p className="mt-3 text-[10.5px] leading-[1.5] text-[#6b7280]">{riskContext.note}</p>
           </div>
-        </section>
-      </main>
-
-      <footer className="mx-auto max-w-7xl px-6 pb-8 text-xs text-slate-400">
-        POC dashboard · all figures are synthetic mock data · no live backend
-        or data pipeline is wired up · every modeling assumption behind the
-        retirement projection, scenarios, and suggested actions is documented
-        in docs/adr/0009-retirement-persona-and-projection.md.
-      </footer>
+        </div>
+      </div>
     </div>
   );
 }
