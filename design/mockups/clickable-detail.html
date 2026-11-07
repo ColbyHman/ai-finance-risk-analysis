@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Holding Detail — clickable mockup</title>
+<style>
+  :root {
+    --bg:#191c1f; --surface:#20242a; --surface-2:#262b32; --border:#2d333b;
+    --ink:#f4f4f4; --ink-dim:#9ba3ab; --ink-faint:#6b7280;
+    --green:#4ade80; --green-dim:rgba(74,222,128,.14);
+    --red:#f87171; --red-dim:rgba(248,113,113,.14);
+    --amber:#fbbf24; --amber-dim:rgba(251,191,36,.14);
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, Helvetica, sans-serif; background: var(--bg); margin:0; color: var(--ink); }
+  a { color: inherit; }
+  .mono { font-family: "SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 24px 60px; }
+
+  .topnav { display:flex; align-items:center; justify-content:space-between; padding: 18px 24px; max-width:980px; margin:0 auto; }
+  .brand { font-weight:700; font-size:14px; letter-spacing:-0.01em; text-decoration:none; }
+  .nav-links { display:flex; gap:6px; }
+  .nav-link { font-size:12px; font-weight:600; color: var(--ink-dim); text-decoration:none; padding:7px 14px; border-radius:999px; }
+  .nav-link.active { background: var(--surface); color: var(--ink); }
+
+  .backlink { font-size:12px; color: var(--ink-dim); text-decoration:none; display:inline-block; margin: 16px 0 14px; }
+  .backlink:hover { color: var(--ink); }
+
+  .head-card { background: var(--surface); border-radius:24px; padding: 24px 28px; margin-bottom: 20px; }
+  .head-top { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:14px; }
+  .head-ticker { font-size:28px; font-weight:700; letter-spacing:-0.02em; margin:0; }
+  .head-sub { color: var(--ink-faint); font-size:12.5px; margin:3px 0 0; }
+  .head-actions { display:flex; gap:8px; align-items:center; }
+  .status-chip { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding: 5px 12px; border-radius: 999px; }
+  .status-chip.act { background: var(--red); color: #191c1f; }
+  .status-chip.watch { background: var(--amber); color: #191c1f; }
+  .status-chip.none { background: var(--surface-2); color: var(--ink-dim); }
+  .mark-reviewed-btn { font-size:12px; font-weight:700; color: var(--bg); background: #fff; border:none; border-radius:999px; padding: 7px 15px; cursor:pointer; }
+  .confidence-line { margin-top:16px; font-size:11.5px; color: var(--ink-faint); }
+
+  .eyebrow { font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color: var(--ink-faint); margin: 0 0 10px; }
+  .card { background: var(--surface); border-radius:20px; padding:18px 20px; margin-bottom:16px; }
+
+  .thesis-text { font-size:13.5px; color: var(--ink-dim); line-height:1.6; margin: 0; }
+  .edit-link { font-size:11.5px; color: var(--ink-faint); float:right; text-decoration:none; font-weight:600; }
+  .verdict-row { display:flex; align-items:center; gap:10px; margin-top:14px; padding-top:14px; border-top:1px solid var(--border); flex-wrap:wrap; }
+  .verdict-chip { font-size:11px; font-weight:700; padding:4px 11px; border-radius:999px; }
+  .verdict-chip.weakens { background: var(--amber-dim); color: var(--amber); }
+  .verdict-chip.supports { background: var(--green-dim); color: var(--green); }
+  .verdict-chip.neutral { background: var(--surface-2); color: var(--ink-dim); }
+  .verdict-reason { font-size:12.5px; color: var(--ink-dim); }
+
+  .bullbear { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .bb-col h4 { margin:0 0 9px; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+  .bb-col.bull h4 { color: var(--green); }
+  .bb-col.bear h4 { color: var(--red); }
+  .bb-col ul { margin:0; padding-left:16px; font-size:12.5px; color: var(--ink-dim); line-height:1.65; }
+  .bb-col li { margin-bottom:7px; }
+  .cite { font-size:10px; vertical-align: super; color: var(--ink); text-decoration:none; font-weight:700; margin-left:1px; cursor:pointer; background:var(--surface-2); padding:1px 4px; border-radius:4px; }
+
+  .cat-list { display:flex; flex-direction:column; gap:10px; }
+  .cat-item { display:flex; align-items:center; gap:14px; font-size:12.5px; }
+  .cat-date { font-family:"SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; font-size:11.5px; color: var(--ink-faint); width:72px; flex-shrink:0; }
+  .cat-label { color: var(--ink-dim); }
+
+  .timeline-item { border-left:2px solid var(--border); padding: 0 0 18px 18px; margin-left:4px; position:relative; }
+  .timeline-item::before { content:""; position:absolute; left:-5px; top:3px; width:8px; height:8px; border-radius:50%; background: var(--ink-faint); }
+  .timeline-item.flagged::before { background: var(--red); }
+  .timeline-item:last-child { padding-bottom:0; }
+  .tl-top { display:flex; align-items:baseline; gap:10px; margin-bottom:4px; }
+  .tl-date { font-size:11px; color: var(--ink-faint); font-family:"SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .tl-type { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color: var(--ink-faint); background: var(--surface-2); padding:2px 7px; border-radius:5px; }
+  .tl-summary { font-size:13px; color: var(--ink-dim); line-height:1.55; margin: 0 0 6px; }
+  .tl-foot { display:flex; align-items:center; gap:10px; }
+  .source-tag { font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
+  .source-tag.primary { background: rgba(167,139,250,.14); color: #a78bfa; }
+  .source-tag.outlet { background: rgba(96,165,250,.14); color: #60a5fa; }
+  .source-tag.social { background: var(--surface-2); color: var(--ink-faint); }
+  .show-work-btn { font-size:11px; color: var(--ink-faint); background:none; border:none; cursor:pointer; text-decoration:underline; }
+
+  .cantverify { background: var(--amber-dim); border-radius:14px; padding:14px 18px; font-size:12px; color: var(--ink-dim); line-height:1.6; }
+  .cantverify ul { margin:6px 0 0; padding-left:16px; }
+
+  .scrim { position:fixed; inset:0; z-index:30; display:none; }
+  .scrim.show { display:block; }
+  .scrim-bg { position:absolute; inset:0; background: rgba(0,0,0,.5); }
+  .drawer { position:absolute; right:0; top:0; height:100%; width:440px; max-width:94vw; background: var(--surface); box-shadow: -8px 0 24px rgba(0,0,0,.4); overflow-y:auto; padding:22px; }
+  .drawer h3 { margin:0 0 4px; font-size:15px; }
+  .drawer .close-btn { float:right; background:none; border:none; font-size:16px; color: var(--ink-faint); cursor:pointer; }
+  .drawer-section { background: var(--surface-2); border-radius:12px; padding:14px; margin-top:12px; }
+  .drawer-section h4 { margin:0 0 7px; font-size:10.5px; font-weight:700; text-transform:uppercase; color: var(--ink-faint); }
+  .drawer-section p { margin:0; font-size:12.5px; color: var(--ink-dim); line-height:1.55; }
+  .excerpt { font-style:italic; border-left:2px solid var(--border); padding-left:10px; }
+  .notfound { padding:60px 0; text-align:center; color: var(--ink-faint); }
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <a class="brand" href="clickable-triage.html">◆ Finance Copilot</a>
+  <div class="nav-links">
+    <a class="nav-link" href="clickable-triage.html">Inbox</a>
+    <a class="nav-link" href="clickable-health.html">Portfolio Health</a>
+  </div>
+</nav>
+<div class="wrap" id="content"></div>
+
+<div class="scrim" id="scrim">
+  <div class="scrim-bg" onclick="document.getElementById('scrim').classList.remove('show')"></div>
+  <aside class="drawer" id="drawer"></aside>
+</div>
+
+<script>
+const HOLDINGS = {
+  NVDA: {
+    name: "NVIDIA Corp.", weight: "9.8%", status: "act",
+    confidence: "Medium — based on 6 documents (1 filing, 3 news, 2 social).",
+    headline: "Two Form 4 insider sales this week, first since Q1",
+    thesis: "Core AI infrastructure holding for the data-center buildout cycle, held for 7+ years as a satellite growth position alongside the index-fund core. Valuation premium accepted as the cost of the exposure; thesis breaks if data-center capex growth decelerates structurally, not cyclically.",
+    verdict: { type: "weakens", label: "Weakens — mildly", reason: "New insider-selling cluster doesn't contradict the capex thesis directly, but is the first signal this period worth tracking against it." },
+    bull: [["Data-center order commentary held strong into next quarter",1],["No change in capex guidance from major cloud customers this period",2]],
+    bear: [["Two Form 4 filings show director-level sales this week, first cluster since Q1",3],["Retail chatter volume tripled vs. 30-day average — tone mixed, a crowding signal worth noting",4]],
+    catalysts: [["Feb 19","Q4 earnings call (confirmed via IR calendar)"],["Mar 02","10-K filing due"],["—","No scheduled analyst day found this period"]],
+    timeline: [
+      { date:"Nov 05", type:"Insider activity", flagged:true, summary:"Two Form 4 filings disclosed director-level stock sales, the first cluster since Q1.", cite:3, tag:"primary", tagLabel:"Primary filing" },
+      { date:"Nov 04", type:"Rumor / opinion", flagged:false, summary:"Retail chatter volume spiked 3x normal, tone split roughly evenly between bullish and cautious.", cite:4, tag:"social", tagLabel:"Social — unverified" },
+      { date:"Nov 02", type:"Macro / sector", flagged:false, summary:"Supply-chain checks reported continued data-center order strength into next quarter.", cite:1, tag:"outlet", tagLabel:"Major outlet" },
+    ],
+    cantVerify: ["No earnings call transcript was available yet for forward-looking management commentary.", "The retail-chatter sentiment reading is based on public post volume only — no access to a licensed social-sentiment feed.", "Analyst rating changes were not fetched this period (deferred to a later live-mode pass)."],
+    sources: {
+      1: { title:"Supply-chain checks point to steady data-center demand", outlet:"TechWire News", date:"Nov 2", quality:"Major outlet", excerpt:"\"Multiple contract manufacturers confirmed order volumes for data-center GPUs held steady into Q1, with no signs of the pull-forward unwind some analysts had flagged as a risk.\"", classification:"Event type: macro/sector · Materiality: 55/100 — relevant but not new information" },
+      2: { title:"Cloud capex guidance unchanged in Q3 calls", outlet:"Company IR roundup", date:"Oct 29", quality:"Primary filing", excerpt:"\"Major cloud providers reiterated full-year capex guidance on their most recent earnings calls, with no downward revision.\"", classification:"Event type: earnings · Materiality: 40/100 — supportive but already priced in" },
+      3: { title:"Form 4 — Statement of Changes in Beneficial Ownership", outlet:"SEC EDGAR", date:"Nov 5", quality:"Primary filing", excerpt:"\"Reporting person disposed of 42,000 shares on 11/03 pursuant to a Rule 10b5-1 trading plan adopted 8/15.\"", classification:"Event type: insider activity · Materiality: 60/100 — new signal, flagged for the thesis check" },
+      4: { title:"r/stocks megathread + StockTwits volume spike", outlet:"Aggregated social", date:"Nov 4", quality:"Social — unverified", excerpt:"\"Post volume mentioning the ticker ran roughly 3.1x its 30-day average on Nov 4.\"", classification:"Event type: rumor/opinion · Materiality: 25/100 — crowding signal, not a thesis-relevant fact" },
+    },
+  },
+  AAPL: {
+    name: "Apple Inc.", weight: "14.2%", status: "act",
+    confidence: "Medium — based on 4 documents (1 filing, 3 news).",
+    headline: "Two analyst downgrades cite China demand softness",
+    thesis: "Long-held core position, valued for durable services revenue growth and capital return. Thesis breaks if services growth stalls or if a multi-region demand slowdown becomes structural rather than a single-quarter wobble.",
+    verdict: { type: "weakens", label: "Weakens — mildly", reason: "Services beat is reassuring, but two independent downgrades in one week is the first negative analyst consensus shift in 5 months." },
+    bull: [["Q4 services revenue beat consensus by 3.1%, hardware roughly in line",1],["No change to buyback or dividend guidance",2]],
+    bear: [["Two sell-side notes this week flagged softer China unit demand as a multi-quarter risk",3],["First negative analyst consensus shift in 5 months",4]],
+    catalysts: [["Jan 28","Q1 earnings call"],["Feb 09","10-Q filing due"]],
+    timeline: [
+      { date:"Nov 05", type:"Earnings", flagged:false, summary:"Q4 services revenue beat consensus by 3.1%; hardware roughly in line with estimates.", cite:1, tag:"primary", tagLabel:"Primary filing" },
+      { date:"Nov 04", type:"Analyst rating", flagged:true, summary:"Second sell-side downgrade this week, both citing China unit demand softness as a multi-quarter concern.", cite:3, tag:"outlet", tagLabel:"Major outlet" },
+    ],
+    cantVerify: ["Analyst price-target detail wasn't available in the fixture set, only the rating direction.", "China-specific unit sell-through data isn't independently verifiable from public filings alone."],
+    sources: {
+      1: { title:"Q4 earnings release", outlet:"Company IR", date:"Nov 5", quality:"Primary filing", excerpt:"\"Services revenue grew 14% year-over-year, ahead of consensus estimates of 11%.\"", classification:"Event type: earnings · Materiality: 50/100" },
+      2: { title:"Capital return program update", outlet:"Company IR", date:"Nov 5", quality:"Primary filing", excerpt:"\"The Board authorized continuation of the existing buyback program with no changes to pace.\"", classification:"Event type: earnings · Materiality: 20/100" },
+      3: { title:"Two downgrades cite China softness", outlet:"MarketWire", date:"Nov 4", quality:"Major outlet", excerpt:"\"Both notes pointed to channel checks suggesting softer-than-expected sell-through in the region.\"", classification:"Event type: litigation/regulatory... (analyst rating) · Materiality: 60/100 — new negative signal" },
+      4: { title:"Analyst consensus tracker", outlet:"Aggregated ratings feed", date:"Nov 4", quality:"Major outlet", excerpt:"\"Consensus rating moved from 'buy' leaning to 'hold' leaning for the first time since June.\"", classification:"Event type: analyst sentiment · Materiality: 45/100" },
+    },
+  },
+  MSFT: {
+    name: "Microsoft Corp.", weight: "6.3%", status: "watch",
+    confidence: "Low — single-sourced, no filing confirmation yet.",
+    headline: "Azure growth deceleration flagged in two outlets, unconfirmed by filings",
+    thesis: "Core cloud/enterprise software holding, thesis rests on durable Azure growth and AI-services monetization. Breaks if Azure growth decelerates structurally rather than a one-quarter compute capacity constraint.",
+    verdict: { type: "neutral", label: "Neutral — unconfirmed", reason: "Single-sourced claim, not yet corroborated by a filing or earnings commentary. Watching, not weighting into the thesis yet." },
+    bull: [["No change to AI-services monetization commentary this period",1]],
+    bear: [["Two outlets independently reported possible Azure growth deceleration next quarter, citing unnamed sources",2]],
+    catalysts: [["Jan 23","Q2 earnings call"]],
+    timeline: [
+      { date:"Nov 03", type:"Rumor / opinion", flagged:false, summary:"Two trade outlets reported anonymous-source claims of a possible Azure growth slowdown next quarter — not corroborated by any filing yet.", cite:2, tag:"outlet", tagLabel:"Major outlet (unconfirmed)" },
+    ],
+    cantVerify: ["The Azure slowdown claim rests on anonymous sourcing in both outlets — no primary filing or management commentary confirms or denies it yet.", "No earnings call has occurred since the claim surfaced."],
+    sources: {
+      1: { title:"AI Copilot monetization update", outlet:"Company blog", date:"Oct 20", quality:"Primary filing", excerpt:"\"Copilot seat growth continued at a similar pace to last quarter, per the company's own disclosure.\"", classification:"Event type: product · Materiality: 15/100" },
+      2: { title:"Sources say Azure growth may slow", outlet:"CloudWire / TechInsider (two outlets)", date:"Nov 3", quality:"Major outlet", excerpt:"\"Two people familiar with the matter, speaking anonymously, said capacity constraints could slow Azure's reported growth rate next quarter.\"", classification:"Event type: macro/sector · Materiality: 50/100 — unconfirmed, single-sourced per outlet" },
+    },
+  },
+  BND: {
+    name: "Vanguard Total Bond Market ETF", weight: "8.5%", status: "watch",
+    confidence: "Medium — macro-driven, fund-level.",
+    headline: "Fed minutes lean toward a slower rate-cut path",
+    thesis: "Duration/ballast sleeve of the portfolio, held to dampen equity volatility, not for yield maximization. Breaks only if the role itself (ballast) stops working, not from any single rate move.",
+    verdict: { type: "neutral", label: "Neutral — macro, not fund-specific", reason: "This is a rate-path story affecting the entire bond sleeve, not something specific to this fund." },
+    bull: [["No credit-quality concerns — this is a duration story, not a credit story",1]],
+    bear: [["FOMC minutes leaned toward a slower cutting path than markets had priced",2]],
+    catalysts: [["Dec 18","Next FOMC meeting"]],
+    timeline: [
+      { date:"Nov 01", type:"Macro / sector", flagged:false, summary:"FOMC minutes released this week leaned toward a slower rate-cutting path than markets had priced in, which weighs on long-duration bond funds specifically.", cite:2, tag:"primary", tagLabel:"Primary (Fed minutes)" },
+    ],
+    cantVerify: ["This fund's actual effective duration this period wasn't in the fixture data, only the benchmark-level Fed commentary."],
+    sources: {
+      1: { title:"Fund fact sheet", outlet:"Vanguard", date:"Oct 1", quality:"Primary filing", excerpt:"\"The fund maintains broad exposure to investment-grade issuers, with no material allocation to below-investment-grade debt.\"", classification:"Event type: macro/sector · Materiality: 10/100" },
+      2: { title:"FOMC minutes, November meeting", outlet:"Federal Reserve", date:"Nov 1", quality:"Primary filing", excerpt:"\"Several participants noted that a more gradual approach to policy easing may be appropriate given recent data.\"", classification:"Event type: macro/sector · Materiality: 55/100 — affects the whole bond sleeve" },
+    },
+  },
+  VTI: {
+    name: "Vanguard Total Stock Market ETF", weight: "22.0%", status: "none",
+    confidence: "High — broad index fund, low idiosyncratic risk.",
+    headline: "No notable news this week",
+    thesis: "Core broad-market equity exposure, the largest single position by design — this is the portfolio's foundation, not a satellite bet.",
+    verdict: { type: "neutral", label: "Neutral — no change", reason: "Tracks its benchmark closely as expected; nothing this period changes that." },
+    bull: [["Tracked its benchmark within normal variance this period",1]], bear: [],
+    catalysts: [], timeline: [
+      { date:"—", type:"No activity", flagged:false, summary:"No fund-level news this week.", cite:1, tag:"primary", tagLabel:"Fund tracking data" },
+    ],
+    cantVerify: [],
+    sources: { 1: { title:"Fund tracking data", outlet:"Fund administrator", date:"Weekly", quality:"Primary filing", excerpt:"\"Tracking difference remained within the fund's typical range for the period.\"", classification:"Event type: macro/sector · Materiality: 5/100" } },
+  },
+  VXUS: {
+    name: "Vanguard Total International Stock ETF", weight: "9.0%", status: "none",
+    confidence: "High — broad index fund, low idiosyncratic risk.",
+    headline: "No notable news this week",
+    thesis: "International diversification sleeve — reduces home-country concentration relative to a US-only equity book.",
+    verdict: { type: "neutral", label: "Neutral — no change", reason: "No fund-level events this period." },
+    bull: [["Continues to provide non-US diversification as designed",1]], bear: [],
+    catalysts: [], timeline: [
+      { date:"—", type:"No activity", flagged:false, summary:"No fund-level news this week.", cite:1, tag:"primary", tagLabel:"Fund tracking data" },
+    ],
+    cantVerify: [],
+    sources: { 1: { title:"Fund tracking data", outlet:"Fund administrator", date:"Weekly", quality:"Primary filing", excerpt:"\"Tracking difference remained within the fund's typical range for the period.\"", classification:"Event type: macro/sector · Materiality: 5/100" } },
+  },
+  Cash: {
+    name: "Cash", weight: "3.0%", status: "none",
+    confidence: "Not applicable.",
+    headline: "Not applicable — cash position",
+    thesis: "Held for rebalancing flexibility and as dry powder, not an investment position with a thesis to check.",
+    verdict: { type: "neutral", label: "N/A", reason: "Nothing to triage for a cash position." },
+    bull: [], bear: [], catalysts: [], timeline: [], cantVerify: [], sources: {},
+  },
+};
+
+function renderStatusChip(status) {
+  const label = status === "act" ? "Act" : status === "watch" ? "Watch" : "No action";
+  return `<span class="status-chip ${status}">${label}</span>`;
+}
+
+function renderBullBear(list, cls) {
+  if (!list.length) return `<p style="font-size:12.5px;color:var(--ink-faint);">None this period.</p>`;
+  return `<ul>${list.map(([text, cite]) => `<li>${text}<a class="cite" data-src="${cite}">[${cite}]</a></li>`).join("")}</ul>`;
+}
+
+function render() {
+  const params = new URLSearchParams(location.search);
+  const ticker = params.get("ticker") || "NVDA";
+  const h = HOLDINGS[ticker];
+  const content = document.getElementById("content");
+  if (!h) { content.innerHTML = `<div class="notfound">No data for "${ticker}".</div>`; return; }
+
+  content.innerHTML = `
+    <a class="backlink" href="clickable-triage.html">← Triage inbox</a>
+    <div class="head-card">
+      <div class="head-top">
+        <div><p class="head-ticker">${ticker}</p><p class="head-sub">${h.name} · ${h.weight} of portfolio</p></div>
+        <div class="head-actions">${renderStatusChip(h.status)}${h.status !== "none" ? `<button class="mark-reviewed-btn">Mark reviewed</button>` : ""}</div>
+      </div>
+      <p class="confidence-line">Confidence: ${h.confidence}</p>
+    </div>
+
+    <p class="eyebrow">Thesis check</p>
+    <div class="card">
+      <a class="edit-link" href="#">Edit thesis</a>
+      <p class="thesis-text">${h.thesis}</p>
+      <div class="verdict-row">
+        <span class="verdict-chip ${h.verdict.type}">${h.verdict.label}</span>
+        <span class="verdict-reason">${h.verdict.reason}</span>
+      </div>
+    </div>
+
+    ${(h.bull.length || h.bear.length) ? `
+    <p class="eyebrow">Bull case / Bear case — this period's evidence</p>
+    <div class="card">
+      <div class="bullbear">
+        <div class="bb-col bull"><h4>Bull</h4>${renderBullBear(h.bull)}</div>
+        <div class="bb-col bear"><h4>Bear</h4>${renderBullBear(h.bear)}</div>
+      </div>
+    </div>` : ""}
+
+    ${h.catalysts.length ? `
+    <p class="eyebrow">Upcoming catalysts</p>
+    <div class="card"><div class="cat-list">
+      ${h.catalysts.map(([date, label]) => `<div class="cat-item"><span class="cat-date">${date}</span><span class="cat-label">${label}</span></div>`).join("")}
+    </div></div>` : ""}
+
+    ${h.timeline.length ? `
+    <p class="eyebrow">Timeline — what happened, in order</p>
+    <div class="card">
+      ${h.timeline.map(t => `
+        <div class="timeline-item ${t.flagged ? "flagged" : ""}">
+          <div class="tl-top"><span class="tl-date">${t.date}</span><span class="tl-type">${t.type}</span></div>
+          <p class="tl-summary">${t.summary}<a class="cite" data-src="${t.cite}">[${t.cite}]</a></p>
+          <div class="tl-foot"><span class="source-tag ${t.tag}">${t.tagLabel}</span><button class="show-work-btn" data-item="${t.cite}">Show your work</button></div>
+        </div>`).join("")}
+    </div>` : ""}
+
+    ${h.cantVerify.length ? `
+    <p class="eyebrow">What this system couldn't verify</p>
+    <div class="cantverify">This period's confidence is limited because:<ul>${h.cantVerify.map(x => `<li>${x}</li>`).join("")}</ul></div>` : ""}
+
+    <div style="font-size:11px;color:var(--ink-faint);text-align:center;margin-top:26px;">Information to help you form your own view — not a recommendation to buy, sell, or hold anything.</div>
+  `;
+
+  content.querySelectorAll(".show-work-btn, .cite").forEach(el => {
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      const id = el.dataset.item || el.dataset.src;
+      const s = h.sources[id];
+      if (!s) return;
+      document.getElementById("drawer").innerHTML = `
+        <button class="close-btn" onclick="document.getElementById('scrim').classList.remove('show')">✕</button>
+        <h3>${s.title}</h3>
+        <p style="margin:2px 0 0;font-size:12px;color:var(--ink-faint);">${s.outlet} · ${s.date}</p>
+        <div class="drawer-section"><h4>Source quality</h4><p>${s.quality}</p></div>
+        <div class="drawer-section"><h4>Raw excerpt</h4><p class="excerpt">${s.excerpt}</p></div>
+        <div class="drawer-section"><h4>Model classification</h4><p>${s.classification}</p></div>
+      `;
+      document.getElementById("scrim").classList.add("show");
+    });
+  });
+
+  const btn = content.querySelector(".mark-reviewed-btn");
+  if (btn) btn.addEventListener("click", () => { btn.textContent = "Reviewed ✓"; btn.disabled = true; btn.style.opacity = .6; });
+}
+
+render();
+</script>
+</body>
+</html>

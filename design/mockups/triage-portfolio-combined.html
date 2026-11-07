@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Triage + Portfolio-level signals — v2</title>
+<style>
+  :root {
+    --slate-50:#f8fafc; --slate-100:#f1f5f9; --slate-200:#e2e8f0; --slate-300:#cbd5e1;
+    --slate-400:#94a3b8; --slate-500:#64748b; --slate-600:#475569; --slate-700:#334155; --slate-900:#0f172a;
+    --navy:#0f2340; --navy-light:#16365e; --navy-50:#eef2f7; --navy-100:#dde6ef;
+    --red-50:#fef2f2; --red-500:#ef4444; --red-600:#dc2626; --red-700:#b91c1c;
+    --green-50:#f0fdf4; --green-600:#16a34a; --green-700:#15803d;
+    --amber-50:#fffbeb; --amber-500:#f59e0b; --amber-600:#d97706; --amber-700:#b45309;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, Helvetica, sans-serif; background: var(--slate-50); margin:0; color: var(--slate-900); }
+  .mono { font-family: "SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .wrap { max-width: 1020px; margin: 0 auto; padding: 24px 24px 60px; }
+  h1 { font-size: 19px; font-weight: 700; margin: 0 0 3px; letter-spacing: -0.01em; }
+  .run-line { font-size:12px; color: var(--slate-500); display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .run-line .ts { font-family: "SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; color: var(--slate-400); }
+  .run-line a { color: var(--navy); text-decoration:none; font-weight:600; }
+  .disclaimer-strip { margin: 14px 0 22px; padding: 10px 14px; background: var(--slate-100); border-radius: 8px; font-size:11.5px; color: var(--slate-500); line-height:1.5; }
+
+  .section-head { display:flex; align-items:center; gap:8px; margin: 0 0 10px; }
+  .eyebrow { font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color: var(--slate-400); margin:0; }
+
+  /* ---- Triage queue ---- */
+  .group-head { display:flex; align-items:center; gap:8px; margin: 18px 0 10px; }
+  .group-head:first-of-type { margin-top: 0; }
+  .group-dot { width:8px; height:8px; border-radius:50%; }
+  .group-dot.act { background: var(--red-600); }
+  .group-dot.watch { background: var(--amber-500); }
+  .group-dot.resolved { background: var(--slate-300); }
+  .group-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color: var(--slate-500); }
+  .group-count { font-size:11.5px; color: var(--slate-400); font-family: "SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; }
+
+  .item { background:#fff; border:1px solid var(--slate-200); border-radius:12px; padding: 13px 16px; margin-bottom:8px; display:flex; gap:14px; align-items:flex-start; cursor:pointer; }
+  .item:hover { box-shadow: 0 2px 8px rgba(15,23,42,.06); }
+  .item.act { border-left: 3px solid var(--red-500); }
+  .item.watch { border-left: 3px solid var(--amber-500); }
+  .item-main { flex:1; min-width:0; }
+  .item-top { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom: 3px; }
+  .item-ticker-row { display:flex; align-items:baseline; gap:8px; }
+  .item-ticker { font-weight:700; font-size:14.5px; letter-spacing:-0.01em; }
+  .item-weight { font-size:11px; color: var(--slate-400); font-family: "SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .status-chip { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; padding: 2px 8px; border-radius: 999px; }
+  .status-chip.act { background: var(--red-50); color: var(--red-700); }
+  .status-chip.watch { background: var(--amber-50); color: var(--amber-700); }
+  .item-headline { font-size:12.5px; font-weight:600; color: var(--slate-800); margin: 2px 0 4px; }
+  .item-summary { font-size:12px; color: var(--slate-600); line-height:1.5; margin: 0 0 8px; }
+  .item-foot { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .item-reason { font-size:11px; color: var(--slate-400); font-style:italic; }
+  .mark-reviewed { font-size:11.5px; font-weight:600; color: var(--navy); background: var(--navy-50); border:none; border-radius:6px; padding: 4px 10px; cursor:pointer; flex-shrink:0; }
+  .item-chart { flex-shrink:0; width:76px; }
+  .item-chart svg { width:100%; height:36px; display:block; }
+
+  /* ---- resolved group: collapsed, low-weight rows, not cards ---- */
+  .resolved-toggle { width:100%; text-align:left; background:none; border:none; cursor:pointer; padding:0; display:flex; align-items:center; gap:8px; }
+  .resolved-caret { font-size:10px; color: var(--slate-400); transition: transform .15s; }
+  .resolved-caret.open { transform: rotate(90deg); }
+  .resolved-list { display:none; margin-top:8px; border:1px solid var(--slate-200); border-radius:10px; overflow:hidden; background:#fff; }
+  .resolved-list.open { display:block; }
+  .resolved-row { display:flex; align-items:center; justify-content:space-between; padding: 8px 14px; font-size:12px; border-bottom:1px solid var(--slate-100); }
+  .resolved-row:last-child { border-bottom:none; }
+  .resolved-row .t { font-weight:600; color: var(--slate-700); }
+  .resolved-row .h { color: var(--slate-500); flex:1; margin: 0 12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .resolved-row .w { color: var(--slate-400); font-family: "SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; font-size:11px; }
+
+  /* ---- empty state ---- */
+  .empty-state { background:#fff; border:1px dashed var(--slate-200); border-radius:12px; padding: 24px 24px; text-align:center; margin-bottom: 8px; }
+  .empty-check { width:36px; height:36px; border-radius:50%; background: var(--green-50); color: var(--green-600); display:flex; align-items:center; justify-content:center; font-size:18px; margin: 0 auto 8px; }
+  .empty-title { font-size:13.5px; font-weight:700; color: var(--slate-800); margin:0 0 4px; }
+  .empty-sub { font-size:12px; color: var(--slate-500); margin:0; }
+
+  /* ---- Portfolio-level signals (the real replacement for the table) ---- */
+  .signals-wrap { margin-top: 32px; }
+  .signal-card { background:#fff; border:1px solid var(--slate-200); border-radius:12px; padding:14px 16px; margin-bottom:10px; display:flex; gap:12px; align-items:flex-start; }
+  .signal-icon { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+  .signal-icon.concentration { background: var(--amber-50); color: var(--amber-600); }
+  .signal-icon.correlation { background: var(--navy-50); color: var(--navy); }
+  .signal-body { flex:1; }
+  .signal-title { font-size:13px; font-weight:700; color: var(--slate-800); margin:0 0 3px; }
+  .signal-text { font-size:12.5px; color: var(--slate-600); line-height:1.5; margin:0; }
+  .signal-tickers { display:flex; gap:5px; margin-top:7px; }
+  .ticker-tag { font-size:10.5px; font-weight:600; color: var(--slate-600); background: var(--slate-100); padding:2px 7px; border-radius:6px; }
+
+  .alloc-bar { display:flex; height:20px; border-radius:6px; overflow:hidden; margin-top:6px; }
+  .alloc-seg { height:100%; }
+  .alloc-legend { display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; font-size:11px; color: var(--slate-500); }
+  .alloc-legend span { display:flex; align-items:center; gap:5px; }
+  .alloc-dot { width:8px; height:8px; border-radius:2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Portfolio</h1>
+  <div class="run-line">
+    <span>Last run: 6 hours ago · 7 holdings checked · 1 fetch failure</span>
+    <span class="ts">as of 10:42 AM ET</span>
+    <a href="#">View run log →</a>
+  </div>
+  <div class="disclaimer-strip">This ranks and summarizes holdings by how much attention recent evidence suggests they need — it is not a recommendation to buy, sell, or hold anything. Every claim links to its source.</div>
+
+  <div class="section-head"><p class="eyebrow">Needs your attention</p></div>
+  <div id="queueContent"></div>
+
+  <div class="signals-wrap">
+    <div class="section-head"><p class="eyebrow">Portfolio-level signals — things no single holding's triage would catch</p></div>
+
+    <div class="signal-card">
+      <div class="signal-icon concentration">◭</div>
+      <div class="signal-body">
+        <p class="signal-title">38% of equity exposure is tech — most of it hidden inside index funds</p>
+        <p class="signal-text">NVDA and AAPL direct holdings are 24% combined, but VTI and VXUS carry meaningful tech weight on top of that. The direct-holding number alone understates the real concentration.</p>
+        <div class="signal-tickers"><span class="ticker-tag">NVDA</span><span class="ticker-tag">AAPL</span><span class="ticker-tag">VTI</span><span class="ticker-tag">VXUS</span></div>
+      </div>
+    </div>
+
+    <div class="signal-card">
+      <div class="signal-icon correlation">⇄</div>
+      <div class="signal-body">
+        <p class="signal-title">This week's NVDA and MSFT news both trace back to the same AI-capex story</p>
+        <p class="signal-text">Treat these as one correlated data point about data-center spending, not two independent confirmations — the triage above lists them separately by design, but they shouldn't be weighted as if they're unrelated.</p>
+        <div class="signal-tickers"><span class="ticker-tag">NVDA</span><span class="ticker-tag">MSFT</span></div>
+      </div>
+    </div>
+
+    <div class="signal-card">
+      <div class="signal-body" style="flex:1;">
+        <p class="signal-title" style="margin-bottom:8px;">Current allocation</p>
+        <div class="alloc-bar" id="allocBar"></div>
+        <div class="alloc-legend" id="allocLegend"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const HOLDINGS = [
+  { ticker: "NVDA", weight: 9.8, status: "act", headline: "Two Form 4 insider sales this week, first since Q1",
+    summary: "A cluster of director-level sales filed Tuesday, plus continued strong data-center order chatter. The insider activity is new; the demand story is unchanged.",
+    reason: "New insider-selling cluster — thesis-relevant, not yet reflected in price", trend: [40,42,38,44,48,45,50,52], reviewed: false, color: "#16a34a" },
+  { ticker: "AAPL", weight: 14.2, status: "act", headline: "Two analyst downgrades cite China demand softness",
+    summary: "Services revenue beat consensus, but two independent sell-side notes this week flagged a multi-quarter China risk.",
+    reason: "First negative analyst consensus shift in 5 months", trend: [60,58,59,55,56,52,53,49], reviewed: false, color: "#2563eb" },
+  { ticker: "MSFT", weight: 6.3, status: "watch", headline: "Azure growth deceleration flagged in two outlets, unconfirmed by filings",
+    summary: "Secondary reporting suggests Azure growth may be slowing. Single-sourced so far — worth watching, not acting on.",
+    reason: "Unverified single-source claim — watch for confirmation", trend: [70,71,69,70,68,69,67,68], reviewed: false, color: "#0ea5e9" },
+  { ticker: "BND", weight: 8.5, status: "watch", headline: "Fed minutes lean toward a slower rate-cut path",
+    summary: "Affects duration risk across the bond sleeve. No fund-specific news — flagged because it's the dominant risk driver this month.",
+    reason: "Macro/rate driver, not fund-specific — portfolio-level relevance", trend: [50,49,48,47,48,46,45,44], reviewed: false, color: "#64748b" },
+  { ticker: "VTI", weight: 22.0, status: "none", headline: "No notable news this week", reviewed: true, color: "#0f2340" },
+  { ticker: "VXUS", weight: 9.0, status: "none", headline: "No notable news this week", reviewed: true, color: "#16365e" },
+  { ticker: "Cash", weight: 3.0, status: "none", headline: "Not applicable", reviewed: true, color: "#cbd5e1" },
+];
+
+function spark(values) {
+  const w=76,h=36;
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = max - min || 1;
+  const pts = values.map((v,i) => [ (i/(values.length-1))*w, h - 4 - ((v-min)/range)*(h-8) ]);
+  const line = pts.map((p,i) => (i===0?"M":"L") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const area = line + ` L ${w} ${h} L 0 ${h} Z`;
+  const up = values[values.length-1] >= values[0];
+  const stroke = up ? "#16a34a" : "#ef4444";
+  const gid = "g"+Math.random().toString(36).slice(2,7);
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${stroke}" stop-opacity=".25"/><stop offset="100%" stop-color="${stroke}" stop-opacity="0"/></linearGradient></defs>
+    <path d="${area}" fill="url(#${gid})"/><path d="${line}" fill="none" stroke="${stroke}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+const GROUPS = [{ key: "act", label: "Act" }, { key: "watch", label: "Watch" }];
+
+function renderQueue() {
+  const el = document.getElementById("queueContent");
+  const active = HOLDINGS.filter(h => !h.reviewed && (h.status === "act" || h.status === "watch"));
+  const resolved = HOLDINGS.filter(h => h.reviewed || h.status === "none");
+
+  let html = "";
+  if (!active.length) {
+    html += `<div class="empty-state"><div class="empty-check">✓</div><p class="empty-title">All caught up</p><p class="empty-sub">Nothing needs attention right now. Next scheduled run: tomorrow, 6:00 AM.</p></div>`;
+  } else {
+    GROUPS.forEach(g => {
+      const items = active.filter(h => h.status === g.key);
+      if (!items.length) return;
+      html += `<div class="group-head"><span class="group-dot ${g.key}"></span><span class="group-title">${g.label}</span><span class="group-count">${items.length}</span></div>`;
+      items.forEach(h => {
+        html += `<div class="item ${h.status}">
+          <div class="item-main">
+            <div class="item-top"><div class="item-ticker-row"><span class="item-ticker">${h.ticker}</span><span class="item-weight">${h.weight}%</span></div><span class="status-chip ${h.status}">${g.label}</span></div>
+            <p class="item-headline">${h.headline}</p>
+            <p class="item-summary">${h.summary}</p>
+            <div class="item-foot"><span class="item-reason">${h.reason}</span><button class="mark-reviewed" data-ticker="${h.ticker}">Mark reviewed</button></div>
+          </div>
+          <div class="item-chart">${spark(h.trend)}</div>
+        </div>`;
+      });
+    });
+  }
+
+  html += `<div class="group-head" style="margin-top:20px;">
+      <button class="resolved-toggle" id="resolvedToggle"><span class="resolved-caret" id="resolvedCaret">▸</span><span class="group-dot resolved"></span><span class="group-title">Reviewed / no action needed</span><span class="group-count">${resolved.length}</span></button>
+    </div>
+    <div class="resolved-list" id="resolvedList">
+      ${resolved.map(h => `<div class="resolved-row"><span class="t">${h.ticker}</span><span class="h">${h.headline}</span><span class="w">${h.weight}%</span></div>`).join("")}
+    </div>`;
+
+  el.innerHTML = html;
+  el.querySelectorAll(".mark-reviewed").forEach(btn => btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const h = HOLDINGS.find(x => x.ticker === btn.dataset.ticker);
+    h.reviewed = true;
+    renderQueue();
+  }));
+  const toggle = document.getElementById("resolvedToggle");
+  if (toggle) toggle.addEventListener("click", () => {
+    document.getElementById("resolvedList").classList.toggle("open");
+    document.getElementById("resolvedCaret").classList.toggle("open");
+  });
+}
+
+function renderAlloc() {
+  const bar = document.getElementById("allocBar");
+  const legend = document.getElementById("allocLegend");
+  bar.innerHTML = HOLDINGS.map(h => `<div class="alloc-seg" style="width:${h.weight}%;background:${h.color};"></div>`).join("");
+  legend.innerHTML = HOLDINGS.map(h => `<span><span class="alloc-dot" style="background:${h.color};"></span>${h.ticker} ${h.weight}%</span>`).join("");
+}
+
+renderQueue();
+renderAlloc();
+</script>
+</body>
+</html>

@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Portfolio Health — clickable mockup</title>
+<style>
+  :root {
+    --bg:#191c1f; --surface:#20242a; --surface-2:#262b32; --border:#2d333b;
+    --ink:#f4f4f4; --ink-dim:#9ba3ab; --ink-faint:#6b7280;
+    --green:#4ade80; --green-dim:rgba(74,222,128,.14);
+    --red:#f87171; --amber:#fbbf24;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, Helvetica, sans-serif; background: var(--bg); margin:0; color: var(--ink); }
+  a { color: inherit; }
+  .mono { font-family: "SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .wrap { max-width: 1020px; margin: 0 auto; padding: 0 24px 60px; }
+
+  .topnav { display:flex; align-items:center; justify-content:space-between; padding: 18px 24px; max-width:1020px; margin:0 auto; }
+  .brand { font-weight:700; font-size:14px; letter-spacing:-0.01em; text-decoration:none; }
+  .nav-links { display:flex; gap:6px; }
+  .nav-link { font-size:12px; font-weight:600; color: var(--ink-dim); text-decoration:none; padding:7px 14px; border-radius:999px; }
+  .nav-link.active { background: var(--surface); color: var(--ink); }
+
+  .page-head { display:flex; align-items:flex-start; justify-content:space-between; margin: 18px 0 20px; }
+  h1 { font-size: 20px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { font-size:12px; color: var(--ink-dim); margin:0; max-width:480px; }
+
+  .eyebrow { font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color: var(--ink-faint); margin:0 0 12px; }
+
+  .hero-card { background: var(--surface); border-radius:24px; padding: 26px 28px; margin-bottom: 20px; }
+  .hero-top { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px; }
+  .hero-value-block .lbl { font-size:11.5px; color: var(--ink-faint); margin:0 0 4px; display:flex; align-items:center; gap:8px; }
+  .hero-value-block .lbl .ts { font-family: "SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; color: var(--ink-faint); font-size:10.5px; opacity:.7; }
+  .hero-value { font-size:40px; font-weight:500; letter-spacing:-0.02em; margin:0; font-variant-numeric: tabular-nums; color:#fff; }
+  .hero-change { font-size:15px; font-weight:600; margin-top:6px; display:flex; align-items:center; gap:5px; }
+  .hero-change.up { color: var(--green); } .hero-change.down { color: var(--red); }
+  .timeframe-toggle { display:flex; gap:2px; background: var(--surface-2); border-radius:999px; padding:4px; }
+  .tf-btn { border:none; background:none; color: var(--ink-faint); font-size:11.5px; font-weight:700; padding:7px 13px; border-radius:999px; cursor:pointer; }
+  .tf-btn.active { background:#fff; color: var(--bg); }
+  .hero-chart { margin-top: 20px; }
+  .hero-chart svg { width:100%; height:110px; display:block; }
+  .hero-chart-caption { display:flex; justify-content:space-between; font-size:10.5px; color: var(--ink-faint); margin-top:6px; font-family: "SF Mono", Consolas, monospace; }
+
+  .card-shell { background: var(--surface); border-radius:20px; overflow:hidden; margin-bottom: 20px; }
+  table { width:100%; border-collapse: collapse; font-size: 13px; }
+  thead th { text-align:left; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color: var(--ink-faint); padding: 14px 20px 10px; }
+  tbody tr { cursor:pointer; }
+  tbody tr:hover { background: var(--surface-2); }
+  tbody td { padding: 11px 20px; border-top: 1px solid var(--border); vertical-align: middle; color: var(--ink); }
+  .ticker-cell { font-weight:700; }
+  .weight-cell { color: var(--ink-faint); font-family: "SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; font-size:11.5px; }
+  .price-cell { font-family: "SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; font-size:12.5px; color: var(--ink-dim); }
+  .change-cell { font-family: "SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; font-size:12.5px; font-weight:600; }
+  .change-cell.up { color: var(--green); } .change-cell.down { color: var(--red); }
+  .mini-chart { width:64px; height:24px; }
+
+  .movers-wrap { display:flex; gap:12px; margin-bottom: 20px; }
+  .mover-card { flex:1; background: var(--surface); border-radius:20px; padding:16px 18px; }
+  .mover-top { display:flex; align-items:baseline; justify-content:space-between; }
+  .mover-ticker { font-weight:700; font-size:14px; color:#fff; }
+  .mover-pct { font-family: "SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; font-weight:700; font-size:14px; }
+  .mover-pct.up { color: var(--green); } .mover-pct.down { color: var(--red); }
+  .mover-label { font-size:10.5px; color: var(--ink-faint); margin:2px 0 10px; }
+  .mover-link { font-size:11.5px; color: var(--bg); background:#fff; text-decoration:none; font-weight:700; display:inline-flex; align-items:center; gap:3px; padding:5px 11px; border-radius:999px; }
+
+  .two-col { display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .alloc-card, .risk-card { background: var(--surface); border-radius:20px; padding:18px 20px; }
+  .alloc-bar { display:flex; height:16px; border-radius:999px; overflow:hidden; margin: 12px 0 10px; }
+  .alloc-seg { height:100%; }
+  .alloc-legend { display:flex; flex-wrap:wrap; gap:10px; font-size:11px; color: var(--ink-dim); }
+  .alloc-legend span { display:flex; align-items:center; gap:5px; }
+  .alloc-dot { width:8px; height:8px; border-radius:2px; }
+
+  .risk-row { display:flex; justify-content:space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size:12px; }
+  .risk-row:last-child { border-bottom:none; }
+  .risk-row .k { color: var(--ink-dim); }
+  .risk-row .v { font-family: "SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; color: var(--ink); font-weight:600; }
+  .risk-note { font-size:10.5px; color: var(--ink-faint); margin-top:12px; line-height:1.5; }
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <a class="brand" href="clickable-triage.html">◆ Finance Copilot</a>
+  <div class="nav-links">
+    <a class="nav-link" href="clickable-triage.html">Inbox</a>
+    <a class="nav-link active" href="clickable-health.html">Portfolio Health</a>
+  </div>
+</nav>
+<div class="wrap">
+  <div class="page-head">
+    <div>
+      <h1>Portfolio Health</h1>
+      <p class="sub">Quick glance at performance — separate from the triage inbox on purpose.</p>
+    </div>
+  </div>
+
+  <div class="hero-card">
+    <div class="hero-top">
+      <div class="hero-value-block">
+        <p class="lbl">Total portfolio value <span class="ts">as of 10:42 AM ET</span></p>
+        <p class="hero-value" id="heroValue">$0</p>
+        <div class="hero-change" id="heroChange"></div>
+      </div>
+      <div class="timeframe-toggle" id="tfToggle">
+        <button class="tf-btn" data-tf="1D">1D</button>
+        <button class="tf-btn" data-tf="1W">1W</button>
+        <button class="tf-btn" data-tf="1M">1M</button>
+        <button class="tf-btn active" data-tf="YTD">YTD</button>
+        <button class="tf-btn" data-tf="1Y">1Y</button>
+      </div>
+    </div>
+    <div class="hero-chart"><svg id="heroChart" viewBox="0 0 700 110" preserveAspectRatio="none"></svg></div>
+    <div class="hero-chart-caption"><span id="capStart"></span><span>— vs. a blended benchmark (dashed)</span><span id="capEnd"></span></div>
+  </div>
+
+  <p class="eyebrow">Biggest movers this period</p>
+  <div class="movers-wrap" id="moversRow"></div>
+
+  <p class="eyebrow">Holdings — price and return <span style="font-weight:400;text-transform:none;letter-spacing:0;">(click a row for its brief)</span></p>
+  <div class="card-shell">
+    <table>
+      <thead><tr>
+        <th style="width:80px;">Ticker</th>
+        <th style="width:80px;">Weight</th>
+        <th style="width:100px;">Price</th>
+        <th style="width:90px;">1D</th>
+        <th style="width:90px;">YTD</th>
+        <th style="width:90px;">30-day</th>
+      </tr></thead>
+      <tbody id="holdingsTable"></tbody>
+    </table>
+  </div>
+
+  <div class="two-col">
+    <div class="alloc-card">
+      <p class="eyebrow" style="margin-bottom:4px;">Allocation</p>
+      <div class="alloc-bar" id="allocBar"></div>
+      <div class="alloc-legend" id="allocLegend"></div>
+    </div>
+    <div class="risk-card">
+      <p class="eyebrow" style="margin-bottom:4px;">Risk context <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink-faint);">— supporting, not actionable</span></p>
+      <div class="risk-row"><span class="k">Diversification score</span><span class="v">61 / 100</span></div>
+      <div class="risk-row"><span class="k">30-day volatility</span><span class="v">14.2%</span></div>
+      <div class="risk-row"><span class="k">Max drawdown (1Y)</span><span class="v">-18.4%</span></div>
+      <p class="risk-note">Describes how the portfolio has behaved, not what to do — see the triage inbox for evidence-based flags.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const BENCH = { path: [118400,119200,117800,120100,121400,119900,122600,123300,121800,124200,123600,124850] };
+const PORT = {
+  "1D":  { value: 124850, changeAbs: 480, changePct: 0.39, path: [124370,124410,124290,124520,124700,124610,124850] },
+  "1W":  { value: 124850, changeAbs: 1210, changePct: 0.98, path: [123640,123900,123500,124100,124400,124250,124850] },
+  "1M":  { value: 124850, changeAbs: 3920, changePct: 3.24, path: [120930,121500,119800,122100,123400,122900,124850] },
+  "YTD": { value: 124850, changeAbs: 15210, changePct: 13.86, path: [109640,111200,108900,113400,116200,114800,118600,120100,117400,121900,123100,124850] },
+  "1Y":  { value: 124850, changeAbs: 19640, changePct: 18.66, path: [105210,108400,103900,110200,107600,112300,116800,114100,119500,121800,118900,124850] },
+};
+
+function sparkSVG(values, w, h) {
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = max - min || 1;
+  const pts = values.map((v,i) => [ (i/(values.length-1))*w, h - 3 - ((v-min)/range)*(h-6) ]);
+  const line = pts.map((p,i) => (i===0?"M":"L") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  return { line };
+}
+
+function renderHero(tf) {
+  const d = PORT[tf];
+  document.getElementById("heroValue").textContent = "$" + d.value.toLocaleString();
+  const up = d.changeAbs >= 0;
+  document.getElementById("heroChange").className = "hero-change " + (up ? "up" : "down");
+  document.getElementById("heroChange").innerHTML = `${up?"↑":"↓"} $${Math.abs(d.changeAbs).toLocaleString()} (${up?"+":""}${d.changePct}%) ${tf}`;
+
+  const w=700,h=110;
+  const accent = up ? "#4ade80" : "#f87171";
+  const benchPath = BENCH.path.slice(-d.path.length);
+  const min = Math.min(...d.path, ...benchPath), max = Math.max(...d.path, ...benchPath);
+  const range = max - min || 1;
+  const toPts = (vals) => vals.map((v,i) => [ (i/(vals.length-1))*w, h - 3 - ((v-min)/range)*(h-6) ]);
+  const portLine = toPts(d.path).map((p,i)=>(i===0?"M":"L")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  const benchLine = toPts(benchPath).map((p,i)=>(i===0?"M":"L")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  const area = portLine + ` L ${w} ${h} L 0 ${h} Z`;
+  const gid = "hg"+tf;
+  document.getElementById("heroChart").innerHTML = `
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${accent}" stop-opacity=".3"/><stop offset="100%" stop-color="${accent}" stop-opacity="0"/></linearGradient></defs>
+    <path d="${area}" fill="url(#${gid})"/>
+    <path d="${benchLine}" fill="none" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <path d="${portLine}" fill="none" stroke="${accent}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  `;
+  document.getElementById("capStart").textContent = tf + " ago";
+  document.getElementById("capEnd").textContent = "today";
+}
+
+document.querySelectorAll(".tf-btn").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".tf-btn").forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  renderHero(b.dataset.tf);
+}));
+renderHero("YTD");
+
+const HOLDINGS = [
+  { ticker:"NVDA", weight:9.8, price:487.32, d1:1.8, ytd:62.4, trend:[40,42,38,44,48,45,50,52] },
+  { ticker:"AAPL", weight:14.2, price:228.14, d1:-0.6, ytd:11.2, trend:[60,58,59,55,56,52,53,49] },
+  { ticker:"MSFT", weight:6.3, price:412.77, d1:0.2, ytd:19.8, trend:[70,71,69,70,68,69,67,68] },
+  { ticker:"VTI", weight:22.0, price:271.05, d1:0.4, ytd:17.1, trend:[268,269,270,271,270,272,273,274] },
+  { ticker:"VXUS", weight:9.0, price:61.88, d1:-0.1, ytd:9.4, trend:[48,47,48,49,48,49,50,49] },
+  { ticker:"BND", weight:8.5, price:72.41, d1:-0.3, ytd:-1.8, trend:[50,49,48,47,48,46,45,44] },
+  { ticker:"Cash", weight:3.0, price:1.00, d1:0.0, ytd:4.9, trend:[1,1,1,1,1,1,1,1] },
+];
+document.getElementById("holdingsTable").innerHTML = HOLDINGS.map(h => {
+  const d1cls = h.d1 > 0 ? "up" : h.d1 < 0 ? "down" : "";
+  const ytdcls = h.ytd > 0 ? "up" : h.ytd < 0 ? "down" : "";
+  const s = sparkSVG(h.trend, 64, 24);
+  const up = h.trend[h.trend.length-1] >= h.trend[0];
+  const stroke = up ? "#4ade80" : "#f87171";
+  return `<tr onclick="location.href='clickable-detail.html?ticker=${h.ticker}'">
+    <td class="ticker-cell">${h.ticker}</td>
+    <td class="weight-cell">${h.weight}%</td>
+    <td class="price-cell">$${h.price.toFixed(2)}</td>
+    <td class="change-cell ${d1cls}">${h.d1>0?"+":""}${h.d1}%</td>
+    <td class="change-cell ${ytdcls}">${h.ytd>0?"+":""}${h.ytd}%</td>
+    <td><svg class="mini-chart" viewBox="0 0 64 24"><path d="${s.line}" fill="none" stroke="${stroke}" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+  </tr>`;
+}).join("");
+
+const QUEUE_STATUS = { NVDA: "Act", AAPL: "Act", MSFT: "Watch", BND: "Watch" };
+const movers = [...HOLDINGS].filter(h => h.ticker !== "Cash").sort((a,b) => Math.abs(b.d1) - Math.abs(a.d1)).slice(0, 3);
+document.getElementById("moversRow").innerHTML = movers.map(h => {
+  const cls = h.d1 > 0 ? "up" : h.d1 < 0 ? "down" : "";
+  const status = QUEUE_STATUS[h.ticker];
+  const linkText = status ? `${status} in the inbox →` : "See its brief →";
+  return `<div class="mover-card">
+    <div class="mover-top"><span class="mover-ticker">${h.ticker}</span><span class="mover-pct ${cls}">${h.d1>0?"+":""}${h.d1}%</span></div>
+    <p class="mover-label">today's move</p>
+    <a class="mover-link" href="clickable-detail.html?ticker=${h.ticker}">${linkText}</a>
+  </div>`;
+}).join("");
+
+const COLORS = { NVDA:"#4ade80", AAPL:"#60a5fa", MSFT:"#38bdf8", VTI:"#f4f4f4", VXUS:"#9ba3ab", BND:"#6b7280", Cash:"#3f454d" };
+document.getElementById("allocBar").innerHTML = HOLDINGS.map(h => `<div class="alloc-seg" style="width:${h.weight}%;background:${COLORS[h.ticker]};"></div>`).join("");
+document.getElementById("allocLegend").innerHTML = HOLDINGS.map(h => `<span><span class="alloc-dot" style="background:${COLORS[h.ticker]};"></span>${h.ticker} ${h.weight}%</span>`).join("");
+</script>
+</body>
+</html>

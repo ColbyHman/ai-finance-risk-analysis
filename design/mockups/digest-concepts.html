@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Digest concepts — summary-first, click-to-expand</title>
+<style>
+  :root {
+    --slate-50:#f8fafc; --slate-100:#f1f5f9; --slate-200:#e2e8f0; --slate-300:#cbd5e1;
+    --slate-400:#94a3b8; --slate-500:#64748b; --slate-600:#475569; --slate-700:#334155; --slate-900:#0f172a;
+    --blue-50:#eff6ff; --blue-200:#bfdbfe; --blue-600:#2563eb; --blue-700:#1d4ed8;
+    --red-50:#fef2f2; --red-200:#fecaca; --red-500:#ef4444; --red-700:#b91c1c;
+    --green-50:#f0fdf4; --green-200:#bbf7d0; --green-600:#16a34a; --green-700:#15803d;
+    --amber-500:#f59e0b;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; background: var(--slate-50); margin:0; color: var(--slate-900); }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 24px; }
+  .page-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom: 24px; gap: 16px; }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  .sub { font-size: 13px; color: var(--slate-500); margin: 0; max-width: 640px; }
+  #tabs { display:flex; border:1px solid var(--slate-200); background:#fff; border-radius: 8px; padding: 4px; flex-shrink:0; }
+  .tab-btn { border:none; background:transparent; font-size:12px; font-weight:500; padding:6px 12px; border-radius:6px; cursor:pointer; color: var(--slate-600); }
+  .tab-btn.active { background: var(--blue-600); color: #fff; }
+  .eyebrow { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color: var(--slate-400); margin: 0 0 12px; }
+  .card-shell { background:#fff; border:1px solid var(--slate-200); border-radius:12px; box-shadow: 0 1px 2px rgba(15,23,42,.04); }
+  table { width:100%; border-collapse: collapse; font-size: 14px; }
+  thead th { text-align:left; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.03em; color: var(--slate-500); background: var(--slate-50); padding: 10px 16px; border-bottom:1px solid var(--slate-200); }
+  tbody td { padding: 12px 16px; border-bottom: 1px solid var(--slate-100); vertical-align: middle; }
+  tbody tr.main-row { cursor:pointer; }
+  tbody tr.main-row:hover { background: var(--slate-50); }
+  .ticker-cell { font-weight:600; display:flex; align-items:center; gap:6px; }
+  .dot { display:inline-block; width:7px; height:7px; border-radius:50%; }
+  .dot-high { background: var(--red-500); } .dot-medium { background: var(--amber-500); } .dot-low { background: var(--slate-300); }
+  .chip { display:inline-flex; align-items:center; border-radius: 999px; padding: 3px 9px; font-size:12px; font-weight:500; border: 1px solid transparent; }
+  .chip-pos { background: var(--green-50); color: var(--green-700); border-color: var(--green-200); }
+  .chip-neg { background: var(--red-50); color: var(--red-700); border-color: var(--red-200); }
+  .chip-neu { background: var(--slate-50); color: var(--slate-600); border-color: var(--slate-200); }
+  .chip-tax { background: var(--blue-50); color: var(--blue-700); border-color: var(--blue-200); }
+  .muted { color: var(--slate-400); font-size:12px; }
+  [data-panel] { display: none; }
+  [data-panel].active { display: block; }
+  .detail-row { display: none; }
+  .detail-row.open { display: table-row; }
+  .detail-row td { background: var(--slate-50); }
+  .detail-grid { display:grid; grid-template-columns: repeat(3,1fr); gap:20px; font-size:13px; }
+  .detail-grid h4 { margin: 0 0 6px; font-size:11px; font-weight:600; text-transform:uppercase; color: var(--slate-400); }
+  .detail-grid ul { margin:0; padding-left:14px; color: var(--slate-600); }
+  .detail-grid p { margin:0; color: var(--slate-600); }
+  .caret { color: var(--slate-400); font-size:11px; }
+  /* Variant B: card grid */
+  .card-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; }
+  .digest-card { background:#fff; border:1px solid var(--slate-200); border-radius:12px; padding:16px; cursor:pointer; box-shadow: 0 1px 2px rgba(15,23,42,.04); }
+  .digest-card:hover { box-shadow: 0 4px 10px rgba(15,23,42,.08); }
+  .card-top { display:flex; align-items:flex-start; justify-content:space-between; }
+  .card-ticker { font-weight:600; display:flex; align-items:center; gap:6px; }
+  .card-weight { font-size:11px; color: var(--slate-400); margin: 2px 0 0; }
+  .card-headline { font-size:13px; color: var(--slate-700); margin: 10px 0; }
+  .card-chips { display:flex; gap:6px; flex-wrap:wrap; }
+  /* drawer */
+  .scrim { position:fixed; inset:0; z-index:20; display:none; }
+  .scrim.show { display:block; }
+  .scrim-bg { position:absolute; inset:0; background: rgba(15,23,42,.3); }
+  .drawer { position:absolute; right:0; top:0; height:100%; width:420px; max-width:92vw; background:#fff; box-shadow: -8px 0 24px rgba(15,23,42,.12); overflow-y:auto; padding:20px; }
+  .drawer-section { background: var(--slate-50); border-radius:10px; padding:12px; margin-top:12px; }
+  .drawer-section h4 { margin:0 0 6px; font-size:11px; font-weight:600; text-transform:uppercase; color: var(--slate-400); }
+  .drawer-section p, .drawer-section ul { margin:0; font-size:13px; color: var(--slate-600); }
+  .drawer-section ul { padding-left:14px; }
+  .drawer-section li { margin-bottom:4px; }
+  .close-btn { background:none; border:none; color: var(--slate-400); font-size:16px; cursor:pointer; }
+  .link { color: var(--blue-600); font-size:13px; font-weight:500; text-decoration:none; display:inline-block; margin-top:16px; }
+  /* Variant C: master/detail */
+  .split { display:grid; grid-template-columns: 320px 1fr; gap:16px; height: 620px; }
+  .list-pane { overflow-y:auto; }
+  .list-item { padding: 12px 16px; border-bottom: 1px solid var(--slate-100); cursor:pointer; }
+  .list-item:hover { background: var(--slate-50); }
+  .list-item.active { background: var(--blue-50); }
+  .list-item-top { display:flex; align-items:center; justify-content:space-between; }
+  .list-headline { font-size:12px; color: var(--slate-500); margin: 4px 0 6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .list-chips { display:flex; gap:4px; }
+  .detail-pane { padding:20px; }
+  .detail-top { display:flex; align-items:flex-start; justify-content:space-between; }
+  .detail-pane h3 { margin:0; font-size:20px; }
+  .detail-pane .sub2 { color: var(--slate-400); font-size:13px; margin:2px 0 0; }
+  .detail-headline { font-size:15px; font-weight:500; margin: 16px 0; }
+  .detail-2col { display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px; }
+  .sparkline-up { stroke: var(--green-600); }
+  .sparkline-down { stroke: var(--red-500); }
+  .sparkline-flat { stroke: var(--slate-400); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="page-head">
+    <div>
+      <h1>Digest — layout concepts</h1>
+      <p class="sub">Three ways to make "what changed" scannable in seconds, with detail one click away. Not wired to real data — for review only.</p>
+    </div>
+    <div id="tabs">
+      <button data-tab="a" class="tab-btn">A — Expandable rows</button>
+      <button data-tab="b" class="tab-btn">B — Card grid + drawer</button>
+      <button data-tab="c" class="tab-btn">C — Master / detail</button>
+    </div>
+  </div>
+
+  <!-- ===================== VARIANT A: Expandable rows ===================== -->
+  <section data-panel="a">
+    <p class="eyebrow">Conservative — closest to a compact table, lowest risk</p>
+    <div class="card-shell" style="overflow:hidden;">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:90px;">Ticker</th>
+            <th>What changed</th>
+            <th style="width:100px;">7-day trend</th>
+            <th style="width:140px;">Sentiment</th>
+            <th style="width:170px;">Tax</th>
+            <th style="width:24px;"></th>
+          </tr>
+        </thead>
+        <tbody id="rowsA"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== VARIANT B: Card grid + drawer ===================== -->
+  <section data-panel="b" style="position:relative;">
+    <p class="eyebrow">Strong-fit — scannable cards, tap for a full brief without leaving the feed</p>
+    <div class="card-grid" id="cardsB"></div>
+
+    <!-- drawer -->
+    <div class="scrim" id="drawerScrimB">
+      <div class="scrim-bg" onclick="document.getElementById('drawerScrimB').classList.remove('show')"></div>
+      <aside class="drawer" id="drawerPanelB"></aside>
+    </div>
+  </section>
+
+  <!-- ===================== VARIANT C: Master/detail ===================== -->
+  <section data-panel="c2">
+    <p class="eyebrow">Divergent — list + persistent detail pane, most "research tool" feeling</p>
+    <div class="split">
+      <div class="card-shell list-pane" id="listC"></div>
+      <div class="card-shell detail-pane" id="detailC"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const DATA = [
+  {
+    ticker: "AAPL", name: "Apple Inc.", weight: "14.2% of portfolio",
+    headline: "Services revenue beat; two downgrades cite China demand",
+    trend: "down", relevance: "high",
+    sentiment: { dir: "deteriorating", basis: "Analyst commentary tone shifted over the last 5 trading days" },
+    tax: "Long-term in 11 days",
+    news: [
+      "Q4 services revenue beat consensus by 3.1%, hardware roughly in line.",
+      "Two sell-side notes this week flagged softer China unit demand as a multi-quarter risk, not a one-quarter miss.",
+      "No change to buyback or dividend guidance."
+    ],
+    fundamentals: "P/E sits above its own 5-year median; services mix continues to grow as a share of revenue.",
+  },
+  {
+    ticker: "NVDA", name: "NVIDIA Corp.", weight: "9.8% of portfolio",
+    headline: "Data-center order commentary stayed strong; chatter volume up 3x",
+    trend: "up", relevance: "high",
+    sentiment: { dir: "improving", basis: "Social/retail chatter volume up sharply, tone mixed" },
+    tax: null,
+    news: [
+      "Supply-chain checks this week point to data-center order strength holding into next quarter.",
+      "Retail chatter volume tripled versus its 30-day average — tone is mixed, not uniformly positive.",
+    ],
+    fundamentals: "Valuation remains well above sector peers; this is the largest single-name driver of the portfolio's tech concentration.",
+  },
+  {
+    ticker: "VTI", name: "Vanguard Total Stock Mkt ETF", weight: "22.0% of portfolio",
+    headline: "No notable news this week — included for tax-lot timing only",
+    trend: "flat", relevance: "medium",
+    sentiment: null,
+    tax: "Wash-sale risk if sold before Jun 14",
+    news: ["No fund-level news this week."],
+    fundamentals: "Broad-market index fund; tracks its benchmark closely as expected.",
+  },
+  {
+    ticker: "TLT", name: "iShares 20+ Yr Treasury Bond ETF", weight: "8.5% of portfolio",
+    headline: "Rate-path commentary from this week's Fed minutes affects duration risk here",
+    trend: "down", relevance: "medium",
+    sentiment: { dir: "deteriorating", basis: "Rate-sensitive commentary following this week's Fed minutes" },
+    tax: null,
+    news: ["This week's FOMC minutes leaned toward a slower cutting path than markets had priced, which weighs on long-duration bond funds specifically."],
+    fundamentals: "Duration risk is the dominant driver here, not credit risk — sensitive to the rate path, not company fundamentals.",
+  },
+  {
+    ticker: "SMCI", name: "Super Micro Computer", weight: "2.1% of portfolio",
+    headline: "Smallest position, largest relative news volume this week",
+    trend: "down", relevance: "low",
+    sentiment: { dir: "deteriorating", basis: "News volume well above normal for this position's size" },
+    tax: "Short-term lot, no long-term date yet",
+    news: ["Elevated press coverage this week relative to this position's small portfolio weight — flagged for attention disproportionate to its size, not urgency."],
+    fundamentals: "Small position; most volatility here has limited portfolio-level impact today.",
+  },
+];
+
+const trendPath = { up: "M0 22 L10 18 L20 20 L30 12 L40 14 L50 6", down: "M0 6 L10 10 L20 8 L30 15 L40 13 L50 20", flat: "M0 13 L10 14 L20 12 L30 13 L40 12 L50 13" };
+const trendClass = { up: "sparkline-up", down: "sparkline-down", flat: "sparkline-flat" };
+function sparkline(trend) {
+  return `<svg width="52" height="24" viewBox="0 0 50 24" fill="none"><path d="${trendPath[trend]}" class="${trendClass[trend]}" stroke-width="2" stroke-linecap="round"/></svg>`;
+}
+function relevanceDot(r) {
+  const c = { high: "dot-high", medium: "dot-medium", low: "dot-low" }[r];
+  return `<span class="dot ${c}"></span>`;
+}
+function sentimentChip(s) {
+  if (!s) return `<span class="muted">—</span>`;
+  const cls = s.dir === "improving" ? "chip-pos" : s.dir === "deteriorating" ? "chip-neg" : "chip-neu";
+  return `<span class="chip ${cls}" title="${s.basis}">${s.dir}</span>`;
+}
+function taxChip(t) {
+  if (!t) return `<span class="muted">—</span>`;
+  return `<span class="chip chip-tax">${t}</span>`;
+}
+
+// ---- Variant A ----
+const rowsA = document.getElementById("rowsA");
+DATA.forEach((d, i) => {
+  const tr = document.createElement("tr");
+  tr.className = "main-row";
+  tr.innerHTML = `
+    <td><span class="ticker-cell">${relevanceDot(d.relevance)} ${d.ticker}</span></td>
+    <td>${d.headline}</td>
+    <td>${sparkline(d.trend)}</td>
+    <td>${sentimentChip(d.sentiment)}</td>
+    <td>${taxChip(d.tax)}</td>
+    <td class="caret">${i === 0 ? "▾" : "▸"}</td>`;
+  rowsA.appendChild(tr);
+  const detail = document.createElement("tr");
+  detail.className = "detail-row" + (i === 0 ? " open" : "");
+  detail.innerHTML = `<td colspan="6">
+    <div class="detail-grid">
+      <div><h4>News</h4><ul>${d.news.map(n => `<li>${n}</li>`).join("")}</ul></div>
+      <div><h4>Sentiment basis</h4><p>${d.sentiment ? d.sentiment.basis : "No active sentiment signal this week."}</p></div>
+      <div><h4>Context</h4><p>${d.fundamentals}</p><p class="muted" style="margin-top:6px;">${d.weight}</p></div>
+    </div></td>`;
+  rowsA.appendChild(detail);
+  tr.addEventListener("click", () => detail.classList.toggle("open"));
+});
+
+// ---- Variant B ----
+const cardsB = document.getElementById("cardsB");
+DATA.forEach((d, i) => {
+  const card = document.createElement("div");
+  card.className = "digest-card";
+  card.innerHTML = `
+    <div class="card-top">
+      <div>
+        <p class="card-ticker">${relevanceDot(d.relevance)} ${d.ticker}</p>
+        <p class="card-weight">${d.weight}</p>
+      </div>
+      ${sparkline(d.trend)}
+    </div>
+    <p class="card-headline">${d.headline}</p>
+    <div class="card-chips">${sentimentChip(d.sentiment)} ${taxChip(d.tax)}</div>`;
+  cardsB.appendChild(card);
+  card.addEventListener("click", () => openDrawerB(d));
+});
+function openDrawerB(d) {
+  document.getElementById("drawerScrimB").classList.add("show");
+  document.getElementById("drawerPanelB").innerHTML = `
+    <div class="detail-top">
+      <div><h3>${d.ticker}</h3><p class="sub2">${d.name} · ${d.weight}</p></div>
+      <button class="close-btn" onclick="document.getElementById('drawerScrimB').classList.remove('show')">✕</button>
+    </div>
+    <p class="detail-headline">${d.headline}</p>
+    <div class="drawer-section"><h4>News this week</h4><ul>${d.news.map(n => `<li>${n}</li>`).join("")}</ul></div>
+    <div class="drawer-section"><h4>Sentiment</h4><div style="margin-bottom:6px;">${sentimentChip(d.sentiment)}</div><p>${d.sentiment ? d.sentiment.basis : "No active signal this week."}</p></div>
+    <div class="drawer-section"><h4>Tax</h4>${taxChip(d.tax)}</div>
+    <div class="drawer-section"><h4>Context</h4><p>${d.fundamentals}</p></div>
+    <a href="#" class="link">Open full security brief →</a>`;
+}
+
+// ---- Variant C ----
+const listC = document.getElementById("listC");
+DATA.forEach((d, i) => {
+  const row = document.createElement("div");
+  row.className = "list-item" + (i === 0 ? " active" : "");
+  row.innerHTML = `
+    <div class="list-item-top">
+      <span class="card-ticker">${relevanceDot(d.relevance)} ${d.ticker}</span>
+      ${sparkline(d.trend)}
+    </div>
+    <p class="list-headline">${d.headline}</p>
+    <div class="list-chips">${sentimentChip(d.sentiment)}${d.tax ? taxChip(d.tax) : ""}</div>`;
+  listC.appendChild(row);
+  row.addEventListener("click", () => {
+    document.querySelectorAll("#listC .list-item").forEach(el => el.classList.remove("active"));
+    row.classList.add("active");
+    renderDetailC(d);
+  });
+});
+function renderDetailC(d) {
+  document.getElementById("detailC").innerHTML = `
+    <div class="detail-top">
+      <div><h3>${d.ticker}</h3><p class="sub2">${d.name} · ${d.weight}</p></div>
+      ${sparkline(d.trend)}
+    </div>
+    <p class="detail-headline">${d.headline}</p>
+    <div class="detail-2col">
+      <div><h4 style="margin:0 0 6px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--slate-400);">Sentiment</h4>${sentimentChip(d.sentiment)}<p style="margin-top:6px;">${d.sentiment ? d.sentiment.basis : "No active signal this week."}</p></div>
+      <div><h4 style="margin:0 0 6px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--slate-400);">Tax relevance</h4>${taxChip(d.tax)}</div>
+    </div>
+    <div class="drawer-section"><h4>News this week</h4><ul>${d.news.map(n => `<li>${n}</li>`).join("")}</ul></div>
+    <div class="drawer-section"><h4>Context</h4><p>${d.fundamentals}</p></div>
+    <a href="#" class="link">Open full security brief →</a>`;
+}
+renderDetailC(DATA[0]);
+
+// ---- Tabs ----
+function setTab(t) {
+  document.querySelectorAll("[data-panel]").forEach(p => p.classList.remove("active"));
+  const key = t === "c" ? "c2" : t;
+  document.querySelector(`[data-panel="${key}"]`).classList.add("active");
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === t));
+}
+document.querySelectorAll(".tab-btn").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
+
+// initial state from ?variant=
+const params = new URLSearchParams(location.search);
+setTab(params.get("variant") || "a");
+</script>
+</body>
+</html>

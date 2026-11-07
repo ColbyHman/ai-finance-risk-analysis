@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Portfolio Health — new features (attribution, drift, cost basis, fee drag)</title>
+<style>
+  :root {
+    --slate-50:#f8fafc; --slate-100:#f1f5f9; --slate-200:#e2e8f0; --slate-300:#cbd5e1;
+    --slate-400:#94a3b8; --slate-500:#64748b; --slate-600:#475569; --slate-700:#334155; --slate-900:#0f172a;
+    --navy:#0f2340; --navy-light:#16365e;
+    --blue-600:#2563eb; --blue-700:#1d4ed8;
+    --red-500:#ef4444; --red-600:#dc2626; --red-700:#b91c1c;
+    --green-500:#22c55e; --green-600:#16a34a; --green-700:#15803d;
+    --amber-500:#f59e0b; --amber-600:#d97706;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, Helvetica, sans-serif; background: var(--slate-50); margin:0; color: var(--slate-900); }
+  .mono { font-family: "SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .wrap { max-width: 1020px; margin: 0 auto; padding: 24px 24px 60px; }
+  h1 { font-size: 19px; font-weight: 700; margin: 0 0 3px; letter-spacing: -0.01em; }
+  .sub { font-size:12px; color: var(--slate-500); margin:0 0 20px; }
+  .eyebrow { font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color: var(--slate-400); margin:0 0 10px; display:flex; align-items:center; gap:8px; }
+  .eyebrow .note { font-weight:400; text-transform:none; letter-spacing:0; color: var(--slate-400); font-size:11px; }
+  .card-shell { background:#fff; border:1px solid var(--slate-200); border-radius:14px; box-shadow: 0 1px 3px rgba(15,23,42,.05); margin-bottom: 22px; }
+
+  /* ---- 1. Performance attribution: contribution to return, $ and % ---- */
+  .attrib-row { display:flex; align-items:center; gap:12px; padding: 11px 18px; border-bottom:1px solid var(--slate-100); }
+  .attrib-row:last-child { border-bottom:none; }
+  .attrib-ticker { font-weight:700; font-size:13px; width:56px; flex-shrink:0; }
+  .attrib-bar-track { flex:1; height:8px; background: var(--slate-100); border-radius:4px; position:relative; }
+  .attrib-bar-fill { position:absolute; top:0; height:100%; border-radius:4px; }
+  .attrib-bar-fill.pos { background: var(--green-500); left:50%; }
+  .attrib-bar-fill.neg { background: var(--red-500); right:50%; }
+  .attrib-center-line { position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background: var(--slate-300); }
+  .attrib-dollar { font-size:12.5px; width:92px; text-align:right; flex-shrink:0; }
+  .attrib-dollar.pos { color: var(--green-700); } .attrib-dollar.neg { color: var(--red-700); }
+  .attrib-pct { font-size:11px; color: var(--slate-400); width:56px; text-align:right; flex-shrink:0; }
+  .attrib-footer { padding: 10px 18px; font-size:11.5px; color: var(--slate-500); background: var(--slate-50); border-top:1px solid var(--slate-100); border-radius: 0 0 14px 14px; }
+
+  /* ---- 2. Allocation drift vs target ---- */
+  .drift-row { padding: 12px 18px; border-bottom:1px solid var(--slate-100); }
+  .drift-row:last-child { border-bottom:none; }
+  .drift-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+  .drift-label { font-size:13px; font-weight:600; }
+  .drift-delta { font-size:11.5px; font-weight:600; }
+  .drift-delta.over { color: var(--amber-600); } .drift-delta.under { color: var(--blue-700); } .drift-delta.ok { color: var(--slate-400); }
+  .drift-track { position:relative; height:10px; background: var(--slate-100); border-radius:5px; }
+  .drift-current { position:absolute; top:0; height:100%; background: var(--navy); border-radius:5px; }
+  .drift-target-mark { position:absolute; top:-3px; bottom:-3px; width:2px; background: var(--slate-700); }
+  .drift-legend { display:flex; gap:14px; font-size:10.5px; color: var(--slate-400); margin-top:5px; }
+  .drift-legend span { display:flex; align-items:center; gap:4px; }
+  .legend-swatch { width:8px; height:8px; border-radius:2px; }
+
+  /* ---- 3. Cost basis / unrealized gains ---- */
+  table { width:100%; border-collapse: collapse; font-size: 13px; }
+  thead th { text-align:left; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color: var(--slate-400); background: var(--slate-50); padding: 10px 16px; border-bottom:1px solid var(--slate-200); }
+  thead th.num, tbody td.num { text-align:right; }
+  tbody td { padding: 10px 16px; border-bottom: 1px solid var(--slate-100); }
+  tbody tr:last-child td { border-bottom:none; }
+  .gain { color: var(--green-700); } .loss { color: var(--red-700); }
+  .lt-tag { font-size:9.5px; font-weight:700; color: var(--slate-400); background: var(--slate-100); padding:1px 5px; border-radius:4px; margin-left:5px; }
+
+  /* ---- 4. Fee drag: quiet, demoted ---- */
+  .fee-card { padding: 16px 18px; display:flex; align-items:center; gap:18px; }
+  .fee-stat { flex:1; }
+  .fee-stat .k { font-size:11px; color: var(--slate-400); margin:0 0 3px; }
+  .fee-stat .v { font-size:16px; font-weight:700; }
+  .fee-note { font-size:11px; color: var(--slate-400); margin-top:8px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Portfolio Health — new feature mockups</h1>
+  <p class="sub">Four additions from the research pass, shown standalone for review before the visual rework. Framed as facts, not instructions — no "rebalance now" language.</p>
+
+  <p class="eyebrow">Performance attribution — this period's return, by holding <span class="note">different from "biggest movers": this is $ contribution, not % change</span></p>
+  <div class="card-shell">
+    <div id="attribList"></div>
+    <div class="attrib-footer">Total portfolio return this period: <strong class="mono">+$3,920</strong> — NVDA and AAPL combined contributed more than the rest of the portfolio; BND was the only meaningful drag.</div>
+  </div>
+
+  <p class="eyebrow">Allocation drift vs. target <span class="note">target set by you, editable — this reports drift, it doesn't suggest a trade</span></p>
+  <div class="card-shell" id="driftCard"></div>
+
+  <p class="eyebrow">Cost basis &amp; unrealized gains</p>
+  <div class="card-shell" style="overflow:hidden;">
+    <table>
+      <thead><tr>
+        <th>Ticker</th><th class="num">Cost basis</th><th class="num">Current value</th><th class="num">Unrealized gain/loss</th>
+      </tr></thead>
+      <tbody id="costBasisTable"></tbody>
+    </table>
+  </div>
+
+  <p class="eyebrow">Fee drag <span class="note">demoted, supporting context</span></p>
+  <div class="card-shell fee-card">
+    <div class="fee-stat"><p class="k">Weighted average expense ratio</p><p class="v mono">0.06%</p></div>
+    <div class="fee-stat"><p class="k">Estimated annual cost</p><p class="v mono">$75</p></div>
+    <div class="fee-stat"><p class="k">Projected cost, 30 years</p><p class="v mono">~$6,400</p></div>
+  </div>
+</div>
+
+<script>
+const ATTRIB = [
+  { ticker: "NVDA", dollar: 1840, pct: 1.47 },
+  { ticker: "AAPL", dollar: 1120, pct: 0.90 },
+  { ticker: "MSFT", dollar: 420, pct: 0.34 },
+  { ticker: "VTI", dollar: 680, pct: 0.54 },
+  { ticker: "VXUS", dollar: 90, pct: 0.07 },
+  { ticker: "BND", dollar: -230, pct: -0.18 },
+];
+const maxAbs = Math.max(...ATTRIB.map(a => Math.abs(a.dollar)));
+function fmtDollar(n) {
+  const sign = n < 0 ? "-" : "+";
+  return `${sign}$${Math.abs(n).toLocaleString()}`;
+}
+document.getElementById("attribList").innerHTML = ATTRIB.map(a => {
+  const pct = (Math.abs(a.dollar) / maxAbs) * 50;
+  const cls = a.dollar >= 0 ? "pos" : "neg";
+  return `<div class="attrib-row">
+    <span class="attrib-ticker">${a.ticker}</span>
+    <div class="attrib-bar-track"><div class="attrib-center-line"></div><div class="attrib-bar-fill ${cls}" style="width:${pct}%;"></div></div>
+    <span class="attrib-dollar ${cls} mono">${fmtDollar(a.dollar)}</span>
+    <span class="attrib-pct mono">${a.pct>=0?"+":""}${a.pct}%</span>
+  </div>`;
+}).join("");
+
+const DRIFT = [
+  { label: "US Equity", current: 44, target: 40, color: "#16a34a" },
+  { label: "Intl Equity", current: 9, target: 12, color: "#0ea5e9" },
+  { label: "Bonds", current: 8.5, target: 15, color: "#64748b" },
+  { label: "Cash", current: 3, target: 3, color: "#cbd5e1" },
+];
+document.getElementById("driftCard").innerHTML = DRIFT.map(d => {
+  const delta = d.current - d.target;
+  const cls = delta > 1 ? "over" : delta < -1 ? "under" : "ok";
+  const label = delta > 1 ? `+${delta.toFixed(1)}pt over target` : delta < -1 ? `${delta.toFixed(1)}pt under target` : "at target";
+  return `<div class="drift-row">
+    <div class="drift-top"><span class="drift-label">${d.label}</span><span class="drift-delta ${cls}">${label}</span></div>
+    <div class="drift-track">
+      <div class="drift-current" style="width:${d.current}%;background:${d.color};"></div>
+      <div class="drift-target-mark" style="left:${d.target}%;"></div>
+    </div>
+  </div>`;
+}).join("") + `<div class="drift-legend" style="padding:10px 18px;"><span><span class="legend-swatch" style="background:#0f2340;"></span>Current allocation</span><span><span class="legend-swatch" style="background:#334155;width:2px;border-radius:0;"></span>Target</span></div>`;
+
+const COST = [
+  { ticker: "NVDA", basis: 7820, value: 12235, ltTag: "LT" },
+  { ticker: "AAPL", basis: 15640, value: 17736, ltTag: "LT" },
+  { ticker: "MSFT", basis: 6500, value: 7869, ltTag: "LT" },
+  { ticker: "VTI", basis: 24100, value: 27475, ltTag: "LT" },
+  { ticker: "VXUS", basis: 9800, value: 10746, ltTag: "LT" },
+  { ticker: "BND", basis: 10900, value: 10625, ltTag: "ST" },
+];
+document.getElementById("costBasisTable").innerHTML = COST.map(c => {
+  const gain = c.value - c.basis;
+  const pct = (gain / c.basis * 100).toFixed(1);
+  const cls = gain >= 0 ? "gain" : "loss";
+  return `<tr>
+    <td>${c.ticker}</td>
+    <td class="num mono">$${c.basis.toLocaleString()}</td>
+    <td class="num mono">$${c.value.toLocaleString()}</td>
+    <td class="num mono ${cls}">${fmtDollar(gain)} (${gain>=0?"+":""}${pct}%)<span class="lt-tag">${c.ltTag}</span></td>
+  </tr>`;
+}).join("");
+</script>
+</body>
+</html>

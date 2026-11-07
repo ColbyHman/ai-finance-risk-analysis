@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Holding Detail — concept (thesis, bull/bear, citations)</title>
+<style>
+  :root {
+    --slate-50:#f8fafc; --slate-100:#f1f5f9; --slate-200:#e2e8f0; --slate-300:#cbd5e1;
+    --slate-400:#94a3b8; --slate-500:#64748b; --slate-600:#475569; --slate-700:#334155; --slate-900:#0f172a;
+    --navy:#0f2340; --navy-light:#16365e;
+    --blue-50:#eff6ff; --blue-200:#bfdbfe; --blue-600:#2563eb; --blue-700:#1d4ed8;
+    --red-50:#fef2f2; --red-200:#fecaca; --red-500:#ef4444; --red-600:#dc2626; --red-700:#b91c1c;
+    --green-50:#f0fdf4; --green-200:#bbf7d0; --green-600:#16a34a; --green-700:#15803d;
+    --amber-50:#fffbeb; --amber-200:#fde68a; --amber-500:#f59e0b; --amber-600:#d97706; --amber-700:#b45309;
+    --purple-50:#faf5ff; --purple-600:#9333ea; --purple-700:#7e22ce;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, Helvetica, sans-serif; background: var(--slate-50); margin:0; color: var(--slate-900); }
+  .mono { font-family: "SF Mono", Consolas, monospace; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 22px 24px 60px; }
+  a.backlink { font-size:12px; color: var(--slate-400); text-decoration:none; }
+
+  .head-card { background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%); border-radius:14px; padding: 20px 24px; color:#fff; margin: 10px 0 18px; position:relative; overflow:hidden; }
+  .head-card::after { content:""; position:absolute; right:-40px; top:-40px; width:220px; height:220px; background: radial-gradient(circle, rgba(255,255,255,.08), transparent 70%); }
+  .head-top { display:flex; align-items:flex-start; justify-content:space-between; position:relative; z-index:1; }
+  .head-ticker { font-size:26px; font-weight:700; letter-spacing:-0.02em; margin:0; }
+  .head-sub { color: rgba(255,255,255,.65); font-size:12.5px; margin:3px 0 0; }
+  .head-actions { display:flex; gap:8px; align-items:center; }
+  .status-chip { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; padding: 4px 10px; border-radius: 999px; }
+  .status-chip.act { background: var(--red-50); color: var(--red-700); }
+  .mark-reviewed-btn { font-size:12px; font-weight:600; color: var(--navy); background:#fff; border:none; border-radius:7px; padding: 6px 12px; cursor:pointer; }
+  .confidence-line { margin-top:14px; font-size:11.5px; color: rgba(255,255,255,.75); position:relative; z-index:1; }
+
+  .eyebrow { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color: var(--slate-400); margin: 0 0 10px; }
+  .card { background:#fff; border:1px solid var(--slate-200); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+
+  /* thesis check */
+  .thesis-text { font-size:13.5px; color: var(--slate-700); line-height:1.55; margin: 0; }
+  .edit-link { font-size:11.5px; color: var(--blue-600); float:right; text-decoration:none; font-weight:600; }
+  .verdict-row { display:flex; align-items:center; gap:8px; margin-top:12px; padding-top:12px; border-top:1px dashed var(--slate-200); }
+  .verdict-chip { font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; }
+  .verdict-chip.weakens { background: var(--amber-50); color: var(--amber-700); }
+  .verdict-reason { font-size:12.5px; color: var(--slate-600); }
+
+  /* bull/bear */
+  .bullbear { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .bb-col h4 { margin:0 0 8px; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+  .bb-col.bull h4 { color: var(--green-700); }
+  .bb-col.bear h4 { color: var(--red-700); }
+  .bb-col ul { margin:0; padding-left:16px; font-size:12.5px; color: var(--slate-600); line-height:1.6; }
+  .bb-col li { margin-bottom:6px; }
+  .cite { font-size:10px; vertical-align: super; color: var(--blue-600); text-decoration:none; font-weight:700; margin-left:1px; cursor:pointer; }
+
+  /* catalyst calendar */
+  .cat-list { display:flex; flex-direction:column; gap:8px; }
+  .cat-item { display:flex; align-items:center; gap:12px; font-size:12.5px; }
+  .cat-date { font-family:monospace; font-size:11.5px; color: var(--slate-500); width:72px; flex-shrink:0; }
+  .cat-label { color: var(--slate-700); }
+
+  /* timeline */
+  .timeline-item { border-left:2px solid var(--slate-100); padding: 0 0 16px 16px; margin-left:4px; position:relative; }
+  .timeline-item::before { content:""; position:absolute; left:-5px; top:3px; width:8px; height:8px; border-radius:50%; background: var(--slate-300); }
+  .timeline-item.flagged::before { background: var(--red-500); }
+  .timeline-item:last-child { padding-bottom:0; }
+  .tl-top { display:flex; align-items:baseline; gap:8px; margin-bottom:3px; }
+  .tl-date { font-size:11px; color: var(--slate-400); font-family:monospace; }
+  .tl-type { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color: var(--slate-400); background: var(--slate-100); padding:1px 6px; border-radius:4px; }
+  .tl-summary { font-size:13px; color: var(--slate-700); line-height:1.5; margin: 0 0 4px; }
+  .tl-foot { display:flex; align-items:center; gap:8px; }
+  .source-tag { font-size:10px; font-weight:700; padding:1px 7px; border-radius:999px; }
+  .source-tag.primary { background: var(--purple-50); color: var(--purple-700); }
+  .source-tag.outlet { background: var(--blue-50); color: var(--blue-700); }
+  .source-tag.social { background: var(--slate-100); color: var(--slate-500); }
+  .show-work-btn { font-size:11px; color: var(--slate-400); background:none; border:none; cursor:pointer; text-decoration:underline; }
+
+  .cantverify { background: var(--amber-50); border:1px solid var(--amber-200); border-radius:10px; padding:12px 16px; font-size:12px; color: var(--slate-700); line-height:1.6; }
+  .cantverify ul { margin:4px 0 0; padding-left:16px; }
+
+  /* show-work drawer */
+  .scrim { position:fixed; inset:0; z-index:30; display:none; }
+  .scrim.show { display:block; }
+  .scrim-bg { position:absolute; inset:0; background: rgba(15,23,42,.35); }
+  .drawer { position:absolute; right:0; top:0; height:100%; width:440px; max-width:94vw; background:#fff; box-shadow: -8px 0 24px rgba(15,23,42,.15); overflow-y:auto; padding:20px; }
+  .drawer h3 { margin:0 0 4px; font-size:15px; }
+  .drawer .close-btn { float:right; background:none; border:none; font-size:16px; color: var(--slate-400); cursor:pointer; }
+  .drawer-section { background: var(--slate-50); border-radius:10px; padding:12px; margin-top:12px; }
+  .drawer-section h4 { margin:0 0 6px; font-size:10.5px; font-weight:700; text-transform:uppercase; color: var(--slate-400); }
+  .drawer-section p { margin:0; font-size:12.5px; color: var(--slate-600); line-height:1.55; }
+  .excerpt { font-style:italic; border-left:2px solid var(--slate-200); padding-left:10px; }
+  .score-row { display:flex; justify-content:space-between; font-size:12px; padding:4px 0; border-bottom:1px solid var(--slate-100); }
+  .score-row:last-child { border-bottom:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="backlink" href="#">← Triage inbox</a>
+
+  <div class="head-card">
+    <div class="head-top">
+      <div>
+        <p class="head-ticker">NVDA</p>
+        <p class="head-sub">NVIDIA Corp. · 9.8% of portfolio</p>
+      </div>
+      <div class="head-actions">
+        <span class="status-chip act">Act</span>
+        <button class="mark-reviewed-btn">Mark reviewed</button>
+      </div>
+    </div>
+    <p class="confidence-line">Confidence: Medium — based on 6 documents (1 filing, 3 news, 2 social). See "couldn't verify" below.</p>
+  </div>
+
+  <p class="eyebrow">Thesis check</p>
+  <div class="card">
+    <a class="edit-link" href="#">Edit thesis</a>
+    <p class="thesis-text">Standing thesis: core AI infrastructure holding for the data-center buildout cycle, held for 7+ years as a satellite growth position alongside the index-fund core. Valuation premium accepted as the cost of the exposure; thesis breaks if data-center capex growth decelerates structurally, not cyclically.</p>
+    <div class="verdict-row">
+      <span class="verdict-chip weakens">Weakens — mildly</span>
+      <span class="verdict-reason">New insider-selling cluster doesn't contradict the capex thesis directly, but is the first signal this period worth tracking against it.</span>
+    </div>
+  </div>
+
+  <p class="eyebrow">Bull case / Bear case — this period's evidence</p>
+  <div class="card">
+    <div class="bullbear">
+      <div class="bb-col bull">
+        <h4>Bull</h4>
+        <ul>
+          <li>Data-center order commentary held strong into next quarter<a class="cite" href="#" data-src="1">[1]</a></li>
+          <li>No change in capex guidance from major cloud customers this period<a class="cite" href="#" data-src="2">[2]</a></li>
+        </ul>
+      </div>
+      <div class="bb-col bear">
+        <h4>Bear</h4>
+        <ul>
+          <li>Two Form 4 filings show director-level sales this week, first cluster since Q1<a class="cite" href="#" data-src="3">[3]</a></li>
+          <li>Retail chatter volume tripled vs. 30-day average — tone mixed, a crowding signal worth noting<a class="cite" href="#" data-src="4">[4]</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <p class="eyebrow">Upcoming catalysts</p>
+  <div class="card">
+    <div class="cat-list">
+      <div class="cat-item"><span class="cat-date">Feb 19</span><span class="cat-label">Q4 earnings call (confirmed via IR calendar)</span></div>
+      <div class="cat-item"><span class="cat-date">Mar 02</span><span class="cat-label">10-K filing due</span></div>
+      <div class="cat-item"><span class="cat-date">—</span><span class="cat-label">No scheduled analyst day found this period</span></div>
+    </div>
+  </div>
+
+  <p class="eyebrow">Timeline — what happened, in order</p>
+  <div class="card">
+    <div class="timeline-item flagged">
+      <div class="tl-top"><span class="tl-date">Nov 05</span><span class="tl-type">Insider activity</span></div>
+      <p class="tl-summary">Two Form 4 filings disclosed director-level stock sales, the first cluster since Q1<a class="cite" href="#" data-src="3">[3]</a>.</p>
+      <div class="tl-foot"><span class="source-tag primary">Primary filing</span><button class="show-work-btn" data-item="3">Show your work</button></div>
+    </div>
+    <div class="timeline-item">
+      <div class="tl-top"><span class="tl-date">Nov 04</span><span class="tl-type">Rumor / opinion</span></div>
+      <p class="tl-summary">Retail chatter volume spiked 3x normal, tone split roughly evenly between bullish and cautious<a class="cite" href="#" data-src="4">[4]</a>.</p>
+      <div class="tl-foot"><span class="source-tag social">Social — unverified</span><button class="show-work-btn" data-item="4">Show your work</button></div>
+    </div>
+    <div class="timeline-item">
+      <div class="tl-top"><span class="tl-date">Nov 02</span><span class="tl-type">Macro / sector</span></div>
+      <p class="tl-summary">Supply-chain checks reported continued data-center order strength into next quarter<a class="cite" href="#" data-src="1">[1]</a>.</p>
+      <div class="tl-foot"><span class="source-tag outlet">Major outlet</span><button class="show-work-btn" data-item="1">Show your work</button></div>
+    </div>
+  </div>
+
+  <p class="eyebrow">What this system couldn't verify</p>
+  <div class="cantverify">
+    This period's confidence is capped at Medium because:
+    <ul>
+      <li>No earnings call transcript was available yet for forward-looking management commentary.</li>
+      <li>The retail-chatter sentiment reading is based on public post volume only — no access to a licensed social-sentiment feed.</li>
+      <li>Analyst rating changes were not fetched this period (deferred to a later live-mode pass — see ADR 0011).</li>
+    </ul>
+  </div>
+
+  <div style="font-size:11px;color:var(--slate-400);text-align:center;margin-top:24px;">Information to help you form your own view — not a recommendation to buy, sell, or hold anything.</div>
+</div>
+
+<div class="scrim" id="scrim">
+  <div class="scrim-bg" onclick="document.getElementById('scrim').classList.remove('show')"></div>
+  <aside class="drawer" id="drawer"></aside>
+</div>
+
+<script>
+const SOURCES = {
+  "1": { title: "Supply-chain checks point to steady data-center demand", outlet: "TechWire News", date: "Nov 2", quality: "Major outlet", url: "https://example.com/techwire/nvda-datacenter",
+    excerpt: "\"Multiple contract manufacturers confirmed order volumes for data-center GPUs held steady into Q1, with no signs of the pull-forward unwind some analysts had flagged as a risk.\"",
+    classification: "Event type: macro/sector · Materiality: 55/100 — relevant but not new information", sentiment: "Neutral-to-positive — confirms continuation, not acceleration" },
+  "2": { title: "Cloud capex guidance unchanged in Q3 calls", outlet: "Company investor relations roundup", date: "Oct 29", quality: "Primary filing", url: "https://example.com/ir/cloud-capex-q3",
+    excerpt: "\"Major cloud providers reiterated full-year capex guidance on their most recent earnings calls, with no downward revision.\"",
+    classification: "Event type: earnings · Materiality: 40/100 — supportive but already priced in", sentiment: "Positive — low surprise" },
+  "3": { title: "Form 4 — Statement of Changes in Beneficial Ownership", outlet: "SEC EDGAR", date: "Nov 5", quality: "Primary filing", url: "https://www.sec.gov/cgi-bin/browse-edgar",
+    excerpt: "\"Reporting person disposed of 42,000 shares on 11/03 pursuant to a Rule 10b5-1 trading plan adopted 8/15.\"",
+    classification: "Event type: insider activity · Materiality: 60/100 — new signal, flagged for the thesis check", sentiment: "Mildly negative — though 10b5-1 plans are pre-scheduled, not necessarily opportunistic" },
+  "4": { title: "r/stocks megathread + StockTwits volume spike", outlet: "Aggregated social (StockTwits, Reddit)", date: "Nov 4", quality: "Social — unverified", url: "https://example.com/social-aggregate/nvda-nov4",
+    excerpt: "\"Post volume mentioning the ticker ran roughly 3.1x its 30-day average on Nov 4, per the chatter-volume adapter.\"",
+    classification: "Event type: rumor/opinion · Materiality: 25/100 — volume is a crowding signal, not a thesis-relevant fact", sentiment: "Mixed — roughly 55% negative / 45% positive post sentiment, single-source method" },
+};
+document.querySelectorAll(".show-work-btn, .cite").forEach(el => {
+  el.addEventListener("click", (e) => {
+    e.preventDefault();
+    const id = el.dataset.item || el.dataset.src;
+    const s = SOURCES[id];
+    document.getElementById("drawer").innerHTML = `
+      <button class="close-btn" onclick="document.getElementById('scrim').classList.remove('show')">✕</button>
+      <h3>${s.title}</h3>
+      <p style="margin:2px 0 0;font-size:12px;color:var(--slate-400);">${s.outlet} · ${s.date}</p>
+      <div class="drawer-section"><h4>Source quality</h4><p>${s.quality} — <a href="${s.url}" style="color:var(--blue-600);">open original →</a></p></div>
+      <div class="drawer-section"><h4>Raw excerpt</h4><p class="excerpt">${s.excerpt}</p></div>
+      <div class="drawer-section"><h4>Model classification</h4><p>${s.classification}</p></div>
+      <div class="drawer-section"><h4>Sentiment rationale</h4><p>${s.sentiment}</p></div>
+    `;
+    document.getElementById("scrim").classList.add("show");
+  });
+});
+</script>
+</body>
+</html>
