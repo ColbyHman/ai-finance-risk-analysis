@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Portfolio Health — quick-glance performance</title>
+<style>
+  :root {
+    --slate-50:#f8fafc; --slate-100:#f1f5f9; --slate-200:#e2e8f0; --slate-300:#cbd5e1;
+    --slate-400:#94a3b8; --slate-500:#64748b; --slate-600:#475569; --slate-700:#334155; --slate-900:#0f172a;
+    --navy:#0f2340; --navy-light:#16365e;
+    --blue-600:#2563eb; --blue-700:#1d4ed8;
+    --red-500:#ef4444; --red-600:#dc2626; --red-700:#b91c1c;
+    --green-500:#22c55e; --green-600:#16a34a; --green-700:#15803d;
+    --amber-500:#f59e0b;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, Helvetica, sans-serif; background: var(--slate-50); margin:0; color: var(--slate-900); }
+  .mono { font-family: "SF Mono", Consolas, monospace; }
+  .wrap { max-width: 1020px; margin: 0 auto; padding: 24px 24px 60px; }
+  .page-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom: 18px; }
+  h1 { font-size: 19px; font-weight: 700; margin: 0 0 3px; letter-spacing: -0.01em; }
+  .sub { font-size:12px; color: var(--slate-500); margin:0; }
+  .back { font-size:12px; color: var(--blue-600); text-decoration:none; font-weight:500; }
+
+  .eyebrow { font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color: var(--slate-400); margin:0 0 10px; }
+
+  /* ---- hero: ONE value metric with its own chart, not a stat-tile row ---- */
+  .hero-card { background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%); border-radius:14px; padding: 22px 26px; color:#fff; margin-bottom: 18px; position:relative; overflow:hidden; }
+  .hero-card::after { content:""; position:absolute; right:-40px; top:-40px; width:220px; height:220px; background: radial-gradient(circle, rgba(255,255,255,.08), transparent 70%); }
+  .hero-top { display:flex; align-items:flex-start; justify-content:space-between; position:relative; z-index:1; flex-wrap:wrap; gap:14px; }
+  .hero-value-block .lbl { font-size:11.5px; color: rgba(255,255,255,.6); margin:0 0 2px; }
+  .hero-value { font-size:34px; font-weight:700; letter-spacing:-0.02em; margin:0; font-family: "SF Mono", Consolas, monospace; }
+  .hero-change { font-size:14px; font-weight:600; margin-top:4px; display:flex; align-items:center; gap:5px; }
+  .hero-change.up { color: #86efac; } .hero-change.down { color: #fca5a5; }
+  .timeframe-toggle { display:flex; gap:2px; background: rgba(255,255,255,.1); border-radius:7px; padding:3px; }
+  .tf-btn { border:none; background:none; color: rgba(255,255,255,.6); font-size:11.5px; font-weight:600; padding:5px 10px; border-radius:5px; cursor:pointer; }
+  .tf-btn.active { background:#fff; color: var(--navy); }
+  .hero-chart { margin-top: 16px; position:relative; z-index:1; }
+  .hero-chart svg { width:100%; height:100px; display:block; }
+  .hero-chart-caption { display:flex; justify-content:space-between; font-size:10.5px; color: rgba(255,255,255,.45); margin-top:4px; font-family:monospace; }
+
+  /* ---- holdings performance table ---- */
+  .card-shell { background:#fff; border:1px solid var(--slate-200); border-radius:14px; box-shadow: 0 1px 3px rgba(15,23,42,.05); overflow:hidden; margin-bottom: 18px; }
+  table { width:100%; border-collapse: collapse; font-size: 13px; }
+  thead th { text-align:left; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color: var(--slate-400); background: var(--slate-50); padding: 10px 16px; border-bottom:1px solid var(--slate-200); }
+  tbody td { padding: 10px 16px; border-bottom: 1px solid var(--slate-100); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  .ticker-cell { font-weight:700; }
+  .weight-cell { color: var(--slate-400); font-family: monospace; font-size:11.5px; }
+  .price-cell { font-family: monospace; font-size:12.5px; }
+  .change-cell { font-family: monospace; font-size:12.5px; font-weight:600; }
+  .change-cell.up { color: var(--green-600); } .change-cell.down { color: var(--red-600); }
+  .mini-chart { width:64px; height:24px; }
+
+  /* ---- allocation ---- */
+  .two-col { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .alloc-card, .risk-card { background:#fff; border:1px solid var(--slate-200); border-radius:12px; padding:16px 18px; }
+  .alloc-bar { display:flex; height:16px; border-radius:6px; overflow:hidden; margin: 10px 0 10px; }
+  .alloc-seg { height:100%; }
+  .alloc-legend { display:flex; flex-wrap:wrap; gap:9px; font-size:11px; color: var(--slate-500); }
+  .alloc-legend span { display:flex; align-items:center; gap:5px; }
+  .alloc-dot { width:8px; height:8px; border-radius:2px; }
+
+  /* ---- risk context: demoted, quiet, supporting ---- */
+  .risk-row { display:flex; justify-content:space-between; padding: 7px 0; border-bottom: 1px solid var(--slate-100); font-size:12px; }
+  .risk-row:last-child { border-bottom:none; }
+  .risk-row .k { color: var(--slate-500); }
+  .risk-row .v { font-family: monospace; color: var(--slate-700); font-weight:600; }
+  .risk-note { font-size:10.5px; color: var(--slate-400); margin-top:10px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="page-head">
+    <div>
+      <h1>Portfolio Health</h1>
+      <p class="sub">Quick glance at performance — separate from the triage inbox on purpose, this is "how is it doing," not "what needs attention."</p>
+    </div>
+    <a class="back" href="#">← Triage inbox</a>
+  </div>
+
+  <div class="hero-card">
+    <div class="hero-top">
+      <div class="hero-value-block">
+        <p class="lbl">Total portfolio value</p>
+        <p class="hero-value" id="heroValue">$0</p>
+        <div class="hero-change" id="heroChange"></div>
+      </div>
+      <div class="timeframe-toggle" id="tfToggle">
+        <button class="tf-btn" data-tf="1D">1D</button>
+        <button class="tf-btn" data-tf="1W">1W</button>
+        <button class="tf-btn" data-tf="1M">1M</button>
+        <button class="tf-btn active" data-tf="YTD">YTD</button>
+        <button class="tf-btn" data-tf="1Y">1Y</button>
+      </div>
+    </div>
+    <div class="hero-chart"><svg id="heroChart" viewBox="0 0 700 100" preserveAspectRatio="none"></svg></div>
+    <div class="hero-chart-caption"><span id="capStart"></span><span>— vs. a blended benchmark (dashed)</span><span id="capEnd"></span></div>
+  </div>
+
+  <p class="eyebrow">Holdings — price and return</p>
+  <div class="card-shell">
+    <table>
+      <thead><tr>
+        <th style="width:80px;">Ticker</th>
+        <th style="width:80px;">Weight</th>
+        <th style="width:100px;">Price</th>
+        <th style="width:90px;">1D</th>
+        <th style="width:90px;">YTD</th>
+        <th style="width:90px;">30-day</th>
+      </tr></thead>
+      <tbody id="holdingsTable"></tbody>
+    </table>
+  </div>
+
+  <div class="two-col">
+    <div class="alloc-card">
+      <p class="eyebrow" style="margin-bottom:4px;">Allocation</p>
+      <div class="alloc-bar" id="allocBar"></div>
+      <div class="alloc-legend" id="allocLegend"></div>
+    </div>
+    <div class="risk-card">
+      <p class="eyebrow" style="margin-bottom:4px;">Risk context <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--slate-400);">— supporting signal, not a score to act on</span></p>
+      <div class="risk-row"><span class="k">Diversification score</span><span class="v">61 / 100</span></div>
+      <div class="risk-row"><span class="k">30-day volatility</span><span class="v">14.2%</span></div>
+      <div class="risk-row"><span class="k">Max drawdown (1Y)</span><span class="v">-18.4%</span></div>
+      <p class="risk-note">These numbers describe how the portfolio has behaved, not what to do about it — see the triage inbox for evidence-based attention flags.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const BENCH = { start: 118400, end: 124850, path: [118400,119200,117800,120100,121400,119900,122600,123300,121800,124200,123600,124850] };
+const PORT = {
+  "1D":  { value: 124850, changeAbs: 480, changePct: 0.39, path: [124370,124410,124290,124520,124700,124610,124850] },
+  "1W":  { value: 124850, changeAbs: 1210, changePct: 0.98, path: [123640,123900,123500,124100,124400,124250,124850] },
+  "1M":  { value: 124850, changeAbs: 3920, changePct: 3.24, path: [120930,121500,119800,122100,123400,122900,124850] },
+  "YTD": { value: 124850, changeAbs: 15210, changePct: 13.86, path: [109640,111200,108900,113400,116200,114800,118600,120100,117400,121900,123100,124850] },
+  "1Y":  { value: 124850, changeAbs: 19640, changePct: 18.66, path: [105210,108400,103900,110200,107600,112300,116800,114100,119500,121800,118900,124850] },
+};
+
+function sparkSVG(values, w, h, color) {
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = max - min || 1;
+  const pts = values.map((v,i) => [ (i/(values.length-1))*w, h - 3 - ((v-min)/range)*(h-6) ]);
+  const line = pts.map((p,i) => (i===0?"M":"L") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const area = line + ` L ${w} ${h} L 0 ${h} Z`;
+  const gid = "g"+Math.random().toString(36).slice(2,7);
+  return { line, area, gid };
+}
+
+function renderHero(tf) {
+  const d = PORT[tf];
+  document.getElementById("heroValue").textContent = "$" + d.value.toLocaleString();
+  const up = d.changeAbs >= 0;
+  document.getElementById("heroChange").className = "hero-change " + (up ? "up" : "down");
+  document.getElementById("heroChange").innerHTML = `${up?"↑":"↓"} $${Math.abs(d.changeAbs).toLocaleString()} (${up?"+":""}${d.changePct}%) ${tf}`;
+
+  const w=700,h=100;
+  const port = sparkSVG(d.path, w, h, "#4ade80");
+  // normalize benchmark path to same length for a comparable dashed line
+  const benchPath = BENCH.path.slice(-d.path.length);
+  const min = Math.min(...d.path, ...benchPath), max = Math.max(...d.path, ...benchPath);
+  const range = max - min || 1;
+  const toPts = (vals) => vals.map((v,i) => [ (i/(vals.length-1))*w, h - 3 - ((v-min)/range)*(h-6) ]);
+  const portLine = toPts(d.path).map((p,i)=>(i===0?"M":"L")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  const benchLine = toPts(benchPath).map((p,i)=>(i===0?"M":"L")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  const area = portLine + ` L ${w} ${h} L 0 ${h} Z`;
+  const gid = "hg"+tf;
+  document.getElementById("heroChart").innerHTML = `
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4ade80" stop-opacity=".3"/><stop offset="100%" stop-color="#4ade80" stop-opacity="0"/></linearGradient></defs>
+    <path d="${area}" fill="url(#${gid})"/>
+    <path d="${benchLine}" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <path d="${portLine}" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  `;
+  document.getElementById("capStart").textContent = tf + " ago";
+  document.getElementById("capEnd").textContent = "today";
+}
+
+document.querySelectorAll(".tf-btn").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".tf-btn").forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  renderHero(b.dataset.tf);
+}));
+renderHero("YTD");
+
+const HOLDINGS = [
+  { ticker:"NVDA", weight:9.8, price:487.32, d1:1.8, ytd:62.4, trend:[40,42,38,44,48,45,50,52] },
+  { ticker:"AAPL", weight:14.2, price:228.14, d1:-0.6, ytd:11.2, trend:[60,58,59,55,56,52,53,49] },
+  { ticker:"MSFT", weight:6.3, price:412.77, d1:0.2, ytd:19.8, trend:[70,71,69,70,68,69,67,68] },
+  { ticker:"VTI", weight:22.0, price:271.05, d1:0.4, ytd:17.1, trend:[268,269,270,271,270,272,273,274] },
+  { ticker:"VXUS", weight:9.0, price:61.88, d1:-0.1, ytd:9.4, trend:[48,47,48,49,48,49,50,49] },
+  { ticker:"BND", weight:8.5, price:72.41, d1:-0.3, ytd:-1.8, trend:[50,49,48,47,48,46,45,44] },
+  { ticker:"Cash", weight:3.0, price:1.00, d1:0.0, ytd:4.9, trend:[1,1,1,1,1,1,1,1] },
+];
+document.getElementById("holdingsTable").innerHTML = HOLDINGS.map(h => {
+  const d1cls = h.d1 > 0 ? "up" : h.d1 < 0 ? "down" : "";
+  const ytdcls = h.ytd > 0 ? "up" : h.ytd < 0 ? "down" : "";
+  const s = sparkSVG(h.trend, 64, 24);
+  const up = h.trend[h.trend.length-1] >= h.trend[0];
+  const stroke = up ? "#16a34a" : "#ef4444";
+  return `<tr>
+    <td class="ticker-cell">${h.ticker}</td>
+    <td class="weight-cell">${h.weight}%</td>
+    <td class="price-cell">$${h.price.toFixed(2)}</td>
+    <td class="change-cell ${d1cls}">${h.d1>0?"+":""}${h.d1}%</td>
+    <td class="change-cell ${ytdcls}">${h.ytd>0?"+":""}${h.ytd}%</td>
+    <td><svg class="mini-chart" viewBox="0 0 64 24"><path d="${s.line}" fill="none" stroke="${stroke}" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+  </tr>`;
+}).join("");
+
+const COLORS = { NVDA:"#16a34a", AAPL:"#2563eb", MSFT:"#0ea5e9", VTI:"#0f2340", VXUS:"#16365e", BND:"#64748b", Cash:"#cbd5e1" };
+document.getElementById("allocBar").innerHTML = HOLDINGS.map(h => `<div class="alloc-seg" style="width:${h.weight}%;background:${COLORS[h.ticker]};"></div>`).join("");
+document.getElementById("allocLegend").innerHTML = HOLDINGS.map(h => `<span><span class="alloc-dot" style="background:${COLORS[h.ticker]};"></span>${h.ticker} ${h.weight}%</span>`).join("");
+</script>
+</body>
+</html>
