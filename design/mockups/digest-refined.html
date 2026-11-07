@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Digest — refined concept (A + C, no drawer, more visual weight)</title>
+<style>
+  :root {
+    --slate-50:#f8fafc; --slate-100:#f1f5f9; --slate-200:#e2e8f0; --slate-300:#cbd5e1;
+    --slate-400:#94a3b8; --slate-500:#64748b; --slate-600:#475569; --slate-700:#334155; --slate-900:#0f172a;
+    --navy:#0f2340; --navy-light:#16365e;
+    --blue-50:#eff6ff; --blue-100:#dbeafe; --blue-200:#bfdbfe; --blue-600:#2563eb; --blue-700:#1d4ed8;
+    --red-50:#fef2f2; --red-100:#fee2e2; --red-200:#fecaca; --red-500:#ef4444; --red-600:#dc2626; --red-700:#b91c1c;
+    --green-50:#f0fdf4; --green-100:#dcfce7; --green-200:#bbf7d0; --green-500:#22c55e; --green-600:#16a34a; --green-700:#15803d;
+    --amber-50:#fffbeb; --amber-200:#fde68a; --amber-500:#f59e0b; --amber-600:#d97706;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, Helvetica, sans-serif; background: var(--slate-50); margin:0; color: var(--slate-900); }
+  .mono { font-family: "SF Mono", "JetBrains Mono", Consolas, monospace; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 22px 24px 40px; }
+
+  /* ---- header ---- */
+  .page-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom: 18px; gap: 16px; }
+  h1 { font-size: 17px; font-weight: 700; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .sub { font-size: 12.5px; color: var(--slate-500); margin: 0; max-width: 560px; }
+  #tabs { display:flex; border:1px solid var(--slate-200); background:#fff; border-radius: 8px; padding: 4px; flex-shrink:0; }
+  .tab-btn { border:none; background:transparent; font-size:12px; font-weight:600; padding:6px 12px; border-radius:6px; cursor:pointer; color: var(--slate-600); }
+  .tab-btn.active { background: var(--navy); color: #fff; }
+
+  /* ---- summary strip: real aggregates, glanceable, gives density without being decorative ---- */
+  .summary-strip { display:grid; grid-template-columns: repeat(4,1fr); gap:1px; background: var(--slate-200); border-radius: 12px; overflow:hidden; margin-bottom: 18px; border:1px solid var(--slate-200); }
+  .summary-cell { background:#fff; padding: 14px 18px; }
+  .summary-cell .num { font-size: 22px; font-weight: 700; font-family: "SF Mono", Consolas, monospace; letter-spacing:-0.02em; }
+  .summary-cell .num.accent-red { color: var(--red-600); }
+  .summary-cell .num.accent-amber { color: var(--amber-600); }
+  .summary-cell .num.accent-navy { color: var(--navy); }
+  .summary-cell .lbl { font-size: 11px; color: var(--slate-500); margin-top: 2px; }
+
+  .eyebrow { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color: var(--slate-400); margin: 0 0 10px; }
+
+  /* ================= REFINED: master/detail (A's density + C's persistent pane) ================= */
+  .split { display:grid; grid-template-columns: 380px 1fr; gap:16px; }
+  .card-shell { background:#fff; border:1px solid var(--slate-200); border-radius:14px; box-shadow: 0 1px 3px rgba(15,23,42,.05); }
+  .list-pane { height: 660px; overflow-y:auto; }
+  .list-header { padding: 12px 16px; border-bottom:1px solid var(--slate-100); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color: var(--slate-400); position:sticky; top:0; background:#fff; }
+
+  .list-item { display:flex; gap:12px; padding: 13px 16px; border-bottom: 1px solid var(--slate-100); cursor:pointer; position:relative; }
+  .list-item:hover { background: var(--slate-50); }
+  .list-item.active { background: var(--blue-50); }
+  .list-item.active::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background: var(--navy); }
+  .relevance-rail { width:4px; border-radius:2px; flex-shrink:0; align-self:stretch; }
+  .rail-high { background: linear-gradient(180deg, var(--red-500), var(--red-600)); }
+  .rail-medium { background: var(--amber-500); }
+  .rail-low { background: var(--slate-200); }
+  .li-body { flex:1; min-width:0; }
+  .li-top { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+  .li-ticker { font-weight:700; font-size:14.5px; letter-spacing:-0.01em; }
+  .li-weight { font-size:10.5px; color: var(--slate-400); font-family: monospace; }
+  .li-headline { font-size:12px; color: var(--slate-600); margin: 3px 0 7px; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .li-foot { display:flex; align-items:center; gap:6px; }
+
+  /* icon-badge sentiment (more visual than a text chip) */
+  .sent-badge { display:inline-flex; align-items:center; gap:4px; border-radius: 999px; padding: 2px 8px 2px 4px; font-size:11px; font-weight:600; }
+  .sent-icon { width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; color:#fff; flex-shrink:0; }
+  .sent-up .sent-icon { background: var(--green-600); } .sent-up { background: var(--green-50); color: var(--green-700); }
+  .sent-down .sent-icon { background: var(--red-600); } .sent-down { background: var(--red-50); color: var(--red-700); }
+  .sent-flat .sent-icon { background: var(--slate-400); } .sent-flat { background: var(--slate-100); color: var(--slate-600); }
+  .tax-badge { display:inline-flex; align-items:center; gap:4px; border-radius: 999px; padding: 2px 8px; font-size:11px; font-weight:600; background: var(--blue-50); color: var(--blue-700); }
+
+  .mini-spark { flex-shrink:0; }
+
+  /* ---- detail pane ---- */
+  .detail-pane { padding:0; overflow:hidden; }
+  .detail-head { padding: 22px 26px 18px; background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%); color:#fff; border-radius: 14px 14px 0 0; position:relative; overflow:hidden; }
+  .detail-head::after { content:""; position:absolute; right:-40px; top:-40px; width:220px; height:220px; background: radial-gradient(circle, rgba(255,255,255,.08), transparent 70%); }
+  .detail-top { display:flex; align-items:flex-start; justify-content:space-between; position:relative; z-index:1; }
+  .detail-pane h2 { margin:0; font-size:26px; font-weight:700; letter-spacing:-0.02em; }
+  .detail-pane .sub2 { color: rgba(255,255,255,.65); font-size:12.5px; margin:3px 0 0; }
+  .detail-headline { font-size:14.5px; font-weight:500; margin: 14px 0 0; color: rgba(255,255,255,.92); max-width: 85%; line-height:1.4; position:relative; z-index:1; }
+
+  .chart-area { padding: 18px 26px 4px; }
+  .chart-area svg { width:100%; height:120px; display:block; }
+  .chart-caption { display:flex; justify-content:space-between; font-size:11px; color: var(--slate-400); margin-top:4px; font-family: monospace; }
+
+  .detail-grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 4px 26px; }
+  .signal-card { background: var(--slate-50); border-radius: 10px; padding: 14px; border:1px solid var(--slate-100); }
+  .signal-card h4 { margin:0 0 8px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color: var(--slate-400); display:flex; align-items:center; gap:6px; }
+  .signal-card p { margin:4px 0 0; font-size:13px; color: var(--slate-600); line-height:1.5; }
+
+  .news-section { padding: 14px 26px 22px; }
+  .news-item { display:flex; gap:10px; padding: 10px 0; border-bottom: 1px solid var(--slate-100); }
+  .news-item:last-child { border-bottom:none; }
+  .news-dot { width:6px; height:6px; border-radius:50%; background: var(--slate-300); margin-top:6px; flex-shrink:0; }
+  .news-text { font-size:13px; color: var(--slate-600); line-height:1.5; }
+
+  .fundamentals-footer { margin: 0 26px 22px; padding: 14px 16px; background: var(--amber-50); border: 1px solid var(--amber-200); border-radius: 10px; font-size:12.5px; color: var(--slate-700); line-height:1.5; }
+  .fundamentals-footer strong { color: var(--amber-600); }
+
+  .disclaimer { padding: 14px 26px; border-top:1px solid var(--slate-100); font-size:11px; color: var(--slate-400); line-height:1.5; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="page-head">
+    <div>
+      <h1>Research Digest — refined</h1>
+      <p class="sub">A + C combined: dense scannable list (A), persistent detail pane (C), drawer removed per feedback. More visual weight — real area charts, icon-based signals, a glanceable summary strip.</p>
+    </div>
+    <div id="tabs">
+      <button data-tab="d1" class="tab-btn">Refined split</button>
+    </div>
+  </div>
+
+  <div class="summary-strip">
+    <div class="summary-cell"><div class="num accent-red">2</div><div class="lbl">high-relevance changes</div></div>
+    <div class="summary-cell"><div class="num accent-amber">2</div><div class="lbl">tax-timing flags this week</div></div>
+    <div class="summary-cell"><div class="num accent-navy">5</div><div class="lbl">positions with news this week</div></div>
+    <div class="summary-cell"><div class="num">61<span style="font-size:14px;">/100</span></div><div class="lbl">diversification score — unchanged</div></div>
+  </div>
+
+  <section>
+    <p class="eyebrow">What changed, ranked by relevance to this portfolio</p>
+    <div class="split">
+      <div class="card-shell list-pane">
+        <div class="list-header">5 updates · ranked by relevance</div>
+        <div id="listC"></div>
+      </div>
+      <div class="card-shell detail-pane" id="detailWrap"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const DATA = [
+  {
+    ticker: "AAPL", name: "Apple Inc.", weight: "14.2% of portfolio", relevance: "high",
+    headline: "Services revenue beat; two downgrades cite China demand",
+    trend: [182,179,181,176,178,172,174,169],
+    sentiment: { dir: "down", label: "Deteriorating", basis: "Analyst commentary tone shifted over the last 5 trading days." },
+    tax: "Long-term in 11 days",
+    news: [
+      "Q4 services revenue beat consensus by 3.1%, hardware roughly in line.",
+      "Two sell-side notes this week flagged softer China unit demand as a multi-quarter risk, not a one-quarter miss.",
+      "No change to buyback or dividend guidance.",
+    ],
+    fundamentals: "P/E sits above its own 5-year median; services mix continues to grow as a share of revenue.",
+  },
+  {
+    ticker: "NVDA", name: "NVIDIA Corp.", weight: "9.8% of portfolio", relevance: "high",
+    headline: "Data-center order commentary stayed strong; chatter volume up 3x",
+    trend: [410,418,405,430,448,440,462,470],
+    sentiment: { dir: "up", label: "Improving", basis: "Social/retail chatter volume up sharply, tone mixed." },
+    tax: null,
+    news: [
+      "Supply-chain checks this week point to data-center order strength holding into next quarter.",
+      "Retail chatter volume tripled versus its 30-day average — tone is mixed, not uniformly positive.",
+    ],
+    fundamentals: "Valuation remains well above sector peers; this is the largest single-name driver of the portfolio's tech concentration.",
+  },
+  {
+    ticker: "TLT", name: "iShares 20+ Yr Treasury Bond ETF", weight: "8.5% of portfolio", relevance: "medium",
+    headline: "Rate-path commentary from this week's Fed minutes affects duration risk here",
+    trend: [92,91,90,89,88,87,86,85],
+    sentiment: { dir: "down", label: "Deteriorating", basis: "Rate-sensitive commentary following this week's Fed minutes." },
+    tax: null,
+    news: ["This week's FOMC minutes leaned toward a slower cutting path than markets had priced, which weighs on long-duration bond funds specifically."],
+    fundamentals: "Duration risk is the dominant driver here, not credit risk — sensitive to the rate path, not company fundamentals.",
+  },
+  {
+    ticker: "VTI", name: "Vanguard Total Stock Mkt ETF", weight: "22.0% of portfolio", relevance: "medium",
+    headline: "No notable news this week — included for tax-lot timing only",
+    trend: [268,269,270,271,270,272,273,274],
+    sentiment: null,
+    tax: "Wash-sale risk if sold before Jun 14",
+    news: ["No fund-level news this week."],
+    fundamentals: "Broad-market index fund; tracks its benchmark closely as expected.",
+  },
+  {
+    ticker: "SMCI", name: "Super Micro Computer", weight: "2.1% of portfolio", relevance: "low",
+    headline: "Smallest position, largest relative news volume this week",
+    trend: [38,41,36,33,35,30,28,26],
+    sentiment: { dir: "down", label: "Deteriorating", basis: "News volume well above normal for this position's size." },
+    tax: "Short-term lot, no long-term date yet",
+    news: ["Elevated press coverage this week relative to this position's small portfolio weight — flagged for attention disproportionate to its size, not urgency."],
+    fundamentals: "Small position; most volatility here has limited portfolio-level impact today.",
+  },
+];
+
+function miniSpark(values, w=64, h=28) {
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = max - min || 1;
+  const pts = values.map((v,i) => [ (i/(values.length-1))*w, h - ((v-min)/range)*h ]);
+  const d = pts.map((p,i) => (i===0?"M":"L") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const up = values[values.length-1] >= values[0];
+  const color = up ? "var(--green-600)" : "var(--red-500)";
+  return `<svg class="mini-spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><path d="${d}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+function bigChart(values, w=600, h=120) {
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = max - min || 1;
+  const pts = values.map((v,i) => [ (i/(values.length-1))*w, h - 10 - ((v-min)/range)*(h-20) ]);
+  const line = pts.map((p,i) => (i===0?"M":"L") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const area = line + ` L ${w} ${h} L 0 ${h} Z`;
+  const up = values[values.length-1] >= values[0];
+  const stroke = up ? "#4ade80" : "#f87171";
+  const gid = "g" + Math.random().toString(36).slice(2,7);
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${stroke}" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="${stroke}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${area}" fill="url(#${gid})"/>
+    <path d="${line}" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+function railClass(r) { return { high: "rail-high", medium: "rail-medium", low: "rail-low" }[r]; }
+function sentBadge(s) {
+  if (!s) return `<span style="font-size:11px;color:var(--slate-400);">no active signal</span>`;
+  const cls = s.dir === "up" ? "sent-up" : s.dir === "down" ? "sent-down" : "sent-flat";
+  const arrow = s.dir === "up" ? "↑" : s.dir === "down" ? "↓" : "→";
+  return `<span class="sent-badge ${cls}"><span class="sent-icon">${arrow}</span>${s.label}</span>`;
+}
+function taxBadge(t) {
+  if (!t) return "";
+  return `<span class="tax-badge">⏱ ${t}</span>`;
+}
+
+const listC = document.getElementById("listC");
+DATA.forEach((d, i) => {
+  const row = document.createElement("div");
+  row.className = "list-item" + (i === 0 ? " active" : "");
+  row.innerHTML = `
+    <div class="relevance-rail ${railClass(d.relevance)}"></div>
+    <div class="li-body">
+      <div class="li-top">
+        <span class="li-ticker">${d.ticker}</span>
+        <span class="li-weight">${d.weight}</span>
+      </div>
+      <p class="li-headline">${d.headline}</p>
+      <div class="li-foot">${sentBadge(d.sentiment)}${taxBadge(d.tax)}</div>
+    </div>
+    ${miniSpark(d.trend)}
+  `;
+  listC.appendChild(row);
+  row.addEventListener("click", () => {
+    document.querySelectorAll(".list-item").forEach(el => el.classList.remove("active"));
+    row.classList.add("active");
+    renderDetail(d);
+  });
+});
+
+function renderDetail(d) {
+  const sentimentCard = d.sentiment
+    ? `<div class="signal-card"><h4>Sentiment signal</h4>${sentBadge(d.sentiment)}<p>${d.sentiment.basis}</p></div>`
+    : `<div class="signal-card"><h4>Sentiment signal</h4><p>No active sentiment signal this week.</p></div>`;
+  const taxCard = d.tax
+    ? `<div class="signal-card"><h4>Tax relevance</h4>${taxBadge(d.tax)}<p>A timing fact about this lot, not a suggestion to act on it.</p></div>`
+    : `<div class="signal-card"><h4>Tax relevance</h4><p>No lot-level flags this week.</p></div>`;
+
+  document.getElementById("detailWrap").innerHTML = `
+    <div class="detail-head">
+      <div class="detail-top">
+        <div><h2>${d.ticker}</h2><p class="sub2">${d.name} · ${d.weight}</p></div>
+      </div>
+      <p class="detail-headline">${d.headline}</p>
+    </div>
+    <div class="chart-area">
+      ${bigChart(d.trend)}
+      <div class="chart-caption"><span>8-week price trend</span><span>context, not a verdict on whether that's good or bad</span></div>
+    </div>
+    <div class="detail-grid2">
+      ${sentimentCard}
+      ${taxCard}
+    </div>
+    <div class="news-section">
+      <h4 style="margin:10px 0 2px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--slate-400);">What changed this week</h4>
+      ${d.news.map(n => `<div class="news-item"><div class="news-dot"></div><div class="news-text">${n}</div></div>`).join("")}
+    </div>
+    <div class="fundamentals-footer"><strong>Context —</strong> ${d.fundamentals}</div>
+    <div class="disclaimer">Information to help you form your own view — not a recommendation to buy, sell, or hold anything, and not a verdict on this holding.</div>
+  `;
+}
+renderDetail(DATA[0]);
+</script>
+</body>
+</html>
