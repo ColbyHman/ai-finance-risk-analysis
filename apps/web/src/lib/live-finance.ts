@@ -75,9 +75,14 @@ function adaptTriageItem(item: LiveTriageItem, index: number, total: number): Tr
 export class FinanceApiError extends Error {}
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  // AbortSignal.timeout bounds a slow/unreachable backend — without
+  // this, a hung fetch during server-side rendering can hang the whole
+  // page request (observed as the container's healthcheck flapping to
+  // "unhealthy" with no other symptom).
   const res = await fetch(`${apiBase()}${path}`, {
     ...init,
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+    signal: init?.signal ?? AbortSignal.timeout(10_000),
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
