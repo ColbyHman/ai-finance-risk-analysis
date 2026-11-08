@@ -3,6 +3,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      # NEXT_PUBLIC_* vars must be build args, not just env_file entries —
+      # Next.js inlines them into the client bundle at `next build` time.
+      # docker compose reads these from .env in this directory for ${...}
+      # substitution (a separate mechanism from env_file below).
+      args:
+        NEXT_PUBLIC_FINANCE_LIVE: ${NEXT_PUBLIC_FINANCE_LIVE:-}
+        NEXT_PUBLIC_FINANCE_API_BASE: ${NEXT_PUBLIC_FINANCE_API_BASE:-}
     container_name: ai-finance-risk-analysis
     env_file:
       - .env
