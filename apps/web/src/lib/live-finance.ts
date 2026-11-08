@@ -1,12 +1,13 @@
 /**
  * Live finance domain data layer (ADR 0015). When
  * NEXT_PUBLIC_FINANCE_LIVE is set truthy, the triage inbox and
- * holdings list fetch from the Conduit ai-gateway instead of
- * importing lib/triage.ts fixtures. When unset/false, callers should
- * fall back to the fixtures entirely — this module is never imported
- * for its side effects in that path.
+ * holdings list fetch from homelab-hub's Conduit backend (the
+ * `finance` module, /api/v1/finance) instead of importing
+ * lib/triage.ts fixtures. When unset/false, callers should fall back
+ * to the fixtures entirely — this module is never imported for its
+ * side effects in that path.
  *
- * Response shapes from the gateway are adapted into the existing
+ * Response shapes from Conduit are adapted into the existing
  * TriageHolding type (lib/triage.ts) so the rendering components don't
  * need to know which data source is active — only the data layer
  * swaps, not the shape (per ADR 0015 Consequences).
@@ -47,7 +48,7 @@ export function isFinanceLive(): boolean {
 }
 
 function apiBase(): string {
-  return process.env.NEXT_PUBLIC_FINANCE_API_BASE || "http://localhost:8088";
+  return process.env.NEXT_PUBLIC_FINANCE_API_BASE || "http://localhost:8080/api/v1/finance";
 }
 
 // Deterministic, UI-only visual accents for live holdings — the
@@ -94,18 +95,18 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 /** Fetches live triage data and adapts it to the TriageHolding shape
  * the inbox page already renders from fixtures. */
 export async function fetchLiveTriage(): Promise<{ holdings: TriageHolding[]; disclaimer: string }> {
-  const data = await apiFetch<LiveTriageResponse>("/finance/triage");
+  const data = await apiFetch<LiveTriageResponse>("/triage");
   const holdings = data.holdings.map((item, i) => adaptTriageItem(item, i, data.holdings.length));
   return { holdings, disclaimer: data.disclaimer };
 }
 
 export async function fetchLiveHoldings(): Promise<LiveHolding[]> {
-  const data = await apiFetch<{ holdings: LiveHolding[] }>("/finance/holdings");
+  const data = await apiFetch<{ holdings: LiveHolding[] }>("/holdings");
   return data.holdings;
 }
 
 export async function addLiveHolding(ticker: string, assetType: AssetType): Promise<LiveHolding> {
-  const data = await apiFetch<{ holding: LiveHolding }>("/finance/holdings", {
+  const data = await apiFetch<{ holding: LiveHolding }>("/holdings", {
     method: "POST",
     body: JSON.stringify({ ticker, asset_type: assetType }),
   });
@@ -113,9 +114,9 @@ export async function addLiveHolding(ticker: string, assetType: AssetType): Prom
 }
 
 export async function removeLiveHolding(ticker: string): Promise<void> {
-  await apiFetch(`/finance/holdings/${encodeURIComponent(ticker)}`, { method: "DELETE" });
+  await apiFetch(`/holdings/${encodeURIComponent(ticker)}`, { method: "DELETE" });
 }
 
 export async function refreshLiveHolding(ticker: string): Promise<void> {
-  await apiFetch(`/finance/holdings/${encodeURIComponent(ticker)}/refresh`, { method: "POST" });
+  await apiFetch(`/holdings/${encodeURIComponent(ticker)}/refresh`, { method: "POST" });
 }
