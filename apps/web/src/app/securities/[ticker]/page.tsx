@@ -1,11 +1,14 @@
 import { notFound } from "next/navigation";
 import { TopNav } from "@/components/SiteNav";
-import { HoldingDetailView } from "@/components/HoldingDetailView";
-import { holdingDetails } from "@/lib/triage";
+import { LiveHoldingDetailView } from "@/components/LiveHoldingDetailView";
+import { fetchHoldingDetail, HoldingNotFoundError } from "@/lib/live-finance";
 
-export function generateStaticParams() {
-  return Object.keys(holdingDetails).map((ticker) => ({ ticker }));
-}
+// This route always fetches live, per-ticker data from Conduit at
+// request time — it can't be statically prerendered. Under this repo's
+// cacheComponents config (next.config.ts), an uncached fetch outside
+// Suspense blocks prerendering unless the route opts into blocking
+// (non-prerendered) rendering explicitly.
+export const instant = false;
 
 export default async function SecurityDetailPage({
   params,
@@ -13,19 +16,20 @@ export default async function SecurityDetailPage({
   params: Promise<{ ticker: string }>;
 }) {
   const { ticker: rawTicker } = await params;
-  const ticker = Object.keys(holdingDetails).find(
-    (t) => t.toLowerCase() === rawTicker.toLowerCase(),
-  );
-  const detail = ticker ? holdingDetails[ticker] : undefined;
+  const ticker = rawTicker.toUpperCase();
 
-  if (!detail || !ticker) {
-    notFound();
+  try {
+    const detail = await fetchHoldingDetail(ticker);
+    return (
+      <div className="min-h-screen">
+        <TopNav current="/securities" />
+        <LiveHoldingDetailView detail={detail} />
+      </div>
+    );
+  } catch (err) {
+    if (err instanceof HoldingNotFoundError) {
+      notFound();
+    }
+    throw err;
   }
-
-  return (
-    <div className="min-h-screen">
-      <TopNav current="/securities" />
-      <HoldingDetailView ticker={ticker} detail={detail} />
-    </div>
-  );
 }

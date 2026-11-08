@@ -26,10 +26,8 @@ COPY apps ./apps
 # time, not read at container start — env_file/.env at `docker compose up`
 # has NO effect on them. They MUST be passed as build args (see
 # docker-compose.yml's build.args) and set here before the build step.
-ARG NEXT_PUBLIC_FINANCE_LIVE=""
 ARG NEXT_PUBLIC_FINANCE_API_BASE=""
-ENV NEXT_PUBLIC_FINANCE_LIVE=$NEXT_PUBLIC_FINANCE_LIVE \
-    NEXT_PUBLIC_FINANCE_API_BASE=$NEXT_PUBLIC_FINANCE_API_BASE
+ENV NEXT_PUBLIC_FINANCE_API_BASE=$NEXT_PUBLIC_FINANCE_API_BASE
 RUN npm run build --workspace=apps/web
 
 FROM node:22-alpine AS runtime

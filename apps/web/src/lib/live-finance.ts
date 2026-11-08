@@ -1,16 +1,15 @@
 /**
- * Live finance domain data layer (ADR 0015). When
- * NEXT_PUBLIC_FINANCE_LIVE is set truthy, the triage inbox and
- * holdings list fetch from homelab-hub's Conduit backend (the
- * `finance` module, /api/v1/finance) instead of importing
- * lib/triage.ts fixtures. When unset/false, callers should fall back
- * to the fixtures entirely — this module is never imported for its
- * side effects in that path.
+ * Live finance domain data layer (ADR 0015, later made the only mode —
+ * see docs/adr/0015-live-finance-domain-and-dynamic-holdings.md). The
+ * triage inbox, holdings list, and per-security detail page all fetch
+ * from homelab-hub's Conduit backend (the `finance` module,
+ * /api/v1/finance) — there is no fixture fallback and no env flag to
+ * toggle it off.
  *
  * Response shapes from Conduit are adapted into the existing
- * TriageHolding type (lib/triage.ts) so the rendering components don't
- * need to know which data source is active — only the data layer
- * swaps, not the shape (per ADR 0015 Consequences).
+ * TriageHolding type (lib/triage.ts) so the triage-rendering components
+ * don't need to know anything about the wire format — only this data
+ * layer talks to Conduit directly.
  */
 import type { TriageHolding } from "./triage";
 
@@ -40,11 +39,47 @@ interface LiveTriageResponse {
   disclaimer: string;
 }
 
-/** True when the app should hit the live Conduit backend instead of
- * fixtures. Read at call time (not module load) so tests/toggling in
- * dev work without a rebuild. */
-export function isFinanceLive(): boolean {
-  return process.env.NEXT_PUBLIC_FINANCE_LIVE === "1" || process.env.NEXT_PUBLIC_FINANCE_LIVE === "true";
+/** One finance_documents row — a filing or news article fetched for a
+ * holding. Mirrors the backend's holdingDetailDocument shape exactly
+ * (services/conduit/internal/modules/finance/handler.go). */
+export interface LiveDocument {
+  id: string;
+  source: string;
+  doc_type: string;
+  url: string;
+  title: string;
+  published_at: string | null;
+}
+
+/** One citation inside a LiveAnalysis — points back at a LiveDocument
+ * by id. */
+export interface LiveCitation {
+  document_id: string;
+  url: string;
+  excerpt: string;
+}
+
+/** One finance_analyses row. Mirrors the backend's holdingDetailAnalysis
+ * shape exactly. */
+export interface LiveAnalysis {
+  id: string;
+  summary: string;
+  event_type: string;
+  sentiment: string;
+  materiality: number;
+  citations: LiveCitation[];
+  created_at: string;
+}
+
+/** The full per-security detail response — GET
+ * /holdings/{ticker}/detail. Mirrors the backend's holdingDetailResponse
+ * shape exactly. */
+export interface LiveHoldingDetail {
+  ticker: string;
+  asset_type: AssetType;
+  active: boolean;
+  documents: LiveDocument[];
+  analyses: LiveAnalysis[];
 }
 
 function apiBase(): string {
@@ -53,15 +88,14 @@ function apiBase(): string {
 
 // Deterministic, UI-only visual accents for live holdings — the
 // backend doesn't track portfolio weights/colors (out of scope for
-// ADR 0015), so these are synthesized for the sparkline/allocation bar
-// the fixture-mode UI already renders.
+// ADR 0015), so these are synthesized for the sparkline the triage
+// inbox renders.
 const PALETTE = ["var(--green)", "#60a5fa", "#38bdf8", "var(--swatch-neutral-2)", "var(--swatch-neutral-1)", "var(--ink-faint)"];
 
-function adaptTriageItem(item: LiveTriageItem, index: number, total: number): TriageHolding {
+function adaptTriageItem(item: LiveTriageItem, index: number): TriageHolding {
   const flat = [50, 50, 50, 50, 50, 50, 50, 50];
   return {
     ticker: item.ticker,
-    weight: total > 0 ? Math.round((100 / total) * 10) / 10 : 0,
     status: item.status,
     headline: item.headline,
     summary: item.summary,
@@ -73,6 +107,8 @@ function adaptTriageItem(item: LiveTriageItem, index: number, total: number): Tr
 }
 
 export class FinanceApiError extends Error {}
+
+export class HoldingNotFoundError extends FinanceApiError {}
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   // AbortSignal.timeout bounds a slow/unreachable backend — without
@@ -87,10 +123,16 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     let message = body;
+    let kind = "";
     try {
-      message = JSON.parse(body).error ?? body;
+      const parsed = JSON.parse(body);
+      message = parsed.detail ?? parsed.error ?? body;
+      kind = parsed.title ?? "";
     } catch {
       /* not JSON, use raw body */
+    }
+    if (res.status === 404 && kind === "holding-not-found") {
+      throw new HoldingNotFoundError(message || "Not found");
     }
     throw new FinanceApiError(message || `Request failed (${res.status})`);
   }
@@ -98,10 +140,10 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 /** Fetches live triage data and adapts it to the TriageHolding shape
- * the inbox page already renders from fixtures. */
+ * the triage inbox renders. */
 export async function fetchLiveTriage(): Promise<{ holdings: TriageHolding[]; disclaimer: string }> {
   const data = await apiFetch<LiveTriageResponse>("/triage");
-  const holdings = data.holdings.map((item, i) => adaptTriageItem(item, i, data.holdings.length));
+  const holdings = data.holdings.map((item, i) => adaptTriageItem(item, i));
   return { holdings, disclaimer: data.disclaimer };
 }
 
@@ -124,4 +166,12 @@ export async function removeLiveHolding(ticker: string): Promise<void> {
 
 export async function refreshLiveHolding(ticker: string): Promise<void> {
   await apiFetch(`/holdings/${encodeURIComponent(ticker)}/refresh`, { method: "POST" });
+}
+
+/** Fetches the full per-security detail view: the holding row plus
+ * its most recent documents and analyses. Throws HoldingNotFoundError
+ * (a FinanceApiError subclass) when the ticker has no row in
+ * finance_holdings at all — callers map that to Next's notFound(). */
+export async function fetchHoldingDetail(ticker: string): Promise<LiveHoldingDetail> {
+  return apiFetch<LiveHoldingDetail>(`/holdings/${encodeURIComponent(ticker)}/detail`);
 }

@@ -4,15 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { TopNav } from "@/components/SiteNav";
 import { HoldingsManager } from "@/components/HoldingsManager";
-import {
-  triageHoldings,
-  portfolioSignals,
-  triageRunLine,
-  triageDisclaimer,
-  withRelevance,
-  type TriageHolding,
-} from "@/lib/triage";
-import { isFinanceLive, fetchLiveTriage, fetchLiveHoldings, type LiveHolding } from "@/lib/live-finance";
+import type { TriageHolding } from "@/lib/triage";
+import { fetchLiveTriage, fetchLiveHoldings, type LiveHolding } from "@/lib/live-finance";
 
 /** Mini sparkline — up/down accent follows the actual last-vs-first
  * sign of the series, never a hardcoded color (per clickable-triage.html). */
@@ -48,13 +41,12 @@ const GROUPS: { key: "act" | "watch"; label: string }[] = [
 ];
 
 export default function HomePage() {
-  const live = isFinanceLive();
-  const [holdings, setHoldings] = useState<TriageHolding[]>(live ? [] : triageHoldings);
+  const [holdings, setHoldings] = useState<TriageHolding[]>([]);
   const [liveHoldings, setLiveHoldings] = useState<LiveHolding[]>([]);
-  const [disclaimer, setDisclaimer] = useState<string>(triageDisclaimer);
+  const [disclaimer, setDisclaimer] = useState<string>("");
   const [resolvedOpen, setResolvedOpen] = useState(false);
-  const [liveError, setLiveError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(live);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   async function loadLiveData() {
     try {
@@ -62,28 +54,25 @@ export default function HomePage() {
       setHoldings(triage.holdings);
       setDisclaimer(triage.disclaimer);
       setLiveHoldings(rawHoldings);
-      setLiveError(null);
+      setLoadError(null);
     } catch {
-      setLiveError(
-        "Couldn't reach the live finance backend — showing the demo fixture data instead. Set NEXT_PUBLIC_FINANCE_LIVE=0 to use fixtures intentionally.",
+      setLoadError(
+        "Couldn't reach the finance backend. Check that homelab-hub/services/conduit is running and NEXT_PUBLIC_FINANCE_API_BASE is correct.",
       );
-      setHoldings(triageHoldings);
-      setDisclaimer(triageDisclaimer);
+      setHoldings([]);
+      setLiveHoldings([]);
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    if (live) {
-      loadLiveData();
-    }
+    loadLiveData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const ranked = useMemo(() => withRelevance(holdings), [holdings]);
-  const active = ranked.filter((h) => !h.reviewed && (h.status === "act" || h.status === "watch"));
-  const resolved = ranked.filter((h) => h.reviewed || h.status === "none");
+  const active = holdings.filter((h) => !h.reviewed && (h.status === "act" || h.status === "watch"));
+  const resolved = holdings.filter((h) => h.reviewed || h.status === "none");
 
   function markReviewed(ticker: string) {
     setHoldings((prev) => prev.map((h) => (h.ticker === ticker ? { ...h, reviewed: true } : h)));
@@ -94,27 +83,19 @@ export default function HomePage() {
       <TopNav current="/" />
       <div className="mx-auto max-w-[1020px] px-6 pb-[60px]">
         <h1 className="mt-[18px] mb-1 text-xl font-bold tracking-tight">Portfolio</h1>
-        <div className="flex flex-wrap items-center gap-2.5 text-xs text-[var(--ink-dim)]">
-          <span>{triageRunLine.summary}</span>
-          <span className="font-mono tabular-nums text-[var(--ink-faint)]">{triageRunLine.asOf}</span>
-          <a href="#" className="font-semibold text-[var(--ink)] no-underline">
-            View run log →
-          </a>
-        </div>
-        <div className="my-[14px] mb-[22px] rounded-[10px] bg-[var(--surface)] px-3.5 py-2.5 text-[11.5px] leading-[1.5] text-[var(--ink-dim)]">
-          {disclaimer}
-        </div>
-        {live && liveError && (
-          <div className="mb-[14px] rounded-[10px] bg-[var(--amber-dim)] px-3.5 py-2.5 text-[11.5px] leading-[1.5] text-[var(--ink-dim)]">
-            {liveError}
+        {disclaimer && (
+          <div className="my-[14px] mb-[22px] rounded-[10px] bg-[var(--surface)] px-3.5 py-2.5 text-[11.5px] leading-[1.5] text-[var(--ink-dim)]">
+            {disclaimer}
           </div>
         )}
-        {live && (
-          <HoldingsManager holdings={liveHoldings} onChanged={loadLiveData} />
+        {loadError && (
+          <div className="mb-[14px] rounded-[10px] bg-[var(--amber-dim)] px-3.5 py-2.5 text-[11.5px] leading-[1.5] text-[var(--ink-dim)]">
+            {loadError}
+          </div>
         )}
-        {live && loading && (
-          <p className="mb-3 text-[11.5px] text-[var(--ink-faint)]">Loading live holdings…</p>
-        )}
+
+        <HoldingsManager holdings={liveHoldings} onChanged={loadLiveData} />
+        {loading && <p className="mb-3 text-[11.5px] text-[var(--ink-faint)]">Loading live holdings…</p>}
 
         <div className="mb-3 flex items-center gap-2">
           <p className="m-0 text-[11.5px] font-bold uppercase tracking-[0.06em] text-[var(--ink-faint)]">
@@ -122,14 +103,14 @@ export default function HomePage() {
           </p>
         </div>
 
-        {active.length === 0 ? (
+        {!loading && active.length === 0 ? (
           <div className="mb-2.5 rounded-[20px] bg-[var(--surface)] px-6 py-8 text-center">
             <div className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--green-dim)] text-xl text-[var(--green)]">
               ✓
             </div>
             <p className="m-0 mb-1 text-sm font-bold">All caught up</p>
             <p className="m-0 text-xs text-[var(--ink-dim)]">
-              Nothing needs attention right now. Next scheduled run: tomorrow, 6:00 AM.
+              Nothing needs attention right now from the holdings currently being watched.
             </p>
           </div>
         ) : (
@@ -157,7 +138,6 @@ export default function HomePage() {
                       <div className="mb-[5px] flex items-center justify-between gap-2.5">
                         <div className="flex items-baseline gap-2">
                           <span className="text-[15px] font-bold tracking-tight">{h.ticker}</span>
-                          <span className="font-mono text-[11px] tabular-nums text-[var(--ink-faint)]">{h.weight}%</span>
                         </div>
                         <span
                           className={`rounded-lg border px-[11px] py-1 text-[10.5px] font-bold uppercase tracking-[0.04em] text-[var(--ink-on-bright)] ${
@@ -216,6 +196,9 @@ export default function HomePage() {
         </div>
         {resolvedOpen && (
           <div className="mb-2.5 overflow-hidden rounded-2xl bg-[var(--surface)]">
+            {resolved.length === 0 && (
+              <p className="m-0 px-4 py-2.5 text-xs text-[var(--ink-faint)]">Nothing here yet.</p>
+            )}
             {resolved.map((h) => (
               <Link
                 key={h.ticker}
@@ -226,65 +209,10 @@ export default function HomePage() {
                 <span className="mx-3.5 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[var(--ink-dim)]">
                   {h.headline}
                 </span>
-                <span className="font-mono text-[11px] tabular-nums text-[var(--ink-faint)]">{h.weight}%</span>
               </Link>
             ))}
           </div>
         )}
-
-        <div className="mt-9">
-          <div className="mb-3 flex items-center gap-2">
-            <p className="m-0 text-[11.5px] font-bold uppercase tracking-[0.06em] text-[var(--ink-faint)]">
-              Portfolio-level signals — things no single holding&apos;s triage would catch
-            </p>
-          </div>
-          {portfolioSignals.map((s) => (
-            <div key={s.id} className="mb-3 flex items-start gap-3.5 rounded-[20px] bg-[var(--surface)] px-5 py-[18px]">
-              <div
-                className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[10px] text-[15px] ${
-                  s.kind === "concentration"
-                    ? "bg-[var(--amber-dim)] text-[var(--amber)]"
-                    : "bg-[var(--surface-2)] text-[var(--ink)]"
-                }`}
-              >
-                {s.icon}
-              </div>
-              <div className="flex-1">
-                <p className="m-0 mb-1 text-[13.5px] font-bold">{s.title}</p>
-                <p className="m-0 text-[12.5px] leading-[1.55] text-[var(--ink-dim)]">{s.text}</p>
-                <div className="mt-[9px] flex gap-1.5">
-                  {s.tickers.map((t) => (
-                    <Link
-                      key={t}
-                      href={`/securities/${t}`}
-                      className="rounded-md border border-[var(--border)] bg-[var(--surface-2)] px-[9px] py-[3px] text-[10.5px] font-bold text-[var(--ink-dim)] no-underline transition-colors hover:border-[var(--ink)] hover:text-[var(--ink)]"
-                    >
-                      {t}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ))}
-          <div className="mb-3 flex items-start gap-3.5 rounded-[20px] bg-[var(--surface)] px-5 py-[18px]">
-            <div className="flex-1">
-              <p className="m-0 mb-2.5 text-[13.5px] font-bold">Current allocation</p>
-              <div className="mt-2 flex h-[22px] overflow-hidden rounded-lg">
-                {triageHoldings.map((h) => (
-                  <div key={h.ticker} style={{ width: `${h.weight}%`, background: h.color }} />
-                ))}
-              </div>
-              <div className="mt-2.5 flex flex-wrap gap-3 text-[11px] text-[var(--ink-dim)]">
-                {triageHoldings.map((h) => (
-                  <span key={h.ticker} className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-sm" style={{ background: h.color }} />
-                    {h.ticker} {h.weight}%
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

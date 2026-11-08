@@ -123,19 +123,59 @@ plain-language glosses) are unchanged from the original version.
   aren't waiting 6 hours on stage.
 
 ## What stays, unchanged
-- Fixture mode (`lib/triage.ts`) stays as a fallback demo path, selected
-  by an env flag (`NEXT_PUBLIC_FINANCE_LIVE=1` to enable live). If live
-  mode has an outage during the actual presentation, flipping the flag
-  off gets back to the known-good fixture demo instantly.
-- `/portfolio-health`, `/retirement`, `/scenarios`, `/diversification` —
-  untouched; this ADR only touches the triage inbox's data source and
-  the holdings list.
+- `/retirement`, `/scenarios`, `/diversification` — untouched; this ADR
+  only touches the triage inbox's data source, the holdings list, and
+  (per the update below) the per-security detail page.
 - UI visual design — unchanged per this round's explicit scope (interface
   is fine for now).
 - The product-level decisions from the original version of this ADR
   (dynamic holdings, AAPL/NVDA default, no buy/sell/hold language,
   plain-language glosses, citation guardrail) — only the backend's
   actual location and internal architecture changed in this revision.
+
+### Update: triage inbox is now live-only, no fixture fallback or flag
+Once the live slice was proven working end-to-end, Colby decided to
+drop the fixture fallback and the `NEXT_PUBLIC_FINANCE_LIVE` toggle
+entirely rather than keep carrying it as a demo-outage safety net —
+the app always fetches from Conduit now. `lib/triage.ts`'s triage-
+inbox fixture array, `portfolioSignals`, `withRelevance`, and the
+`triageRunLine`/`triageDisclaimer` constants were deleted, along with
+`lib/digest.ts` and `lib/mock-data.ts` (both had zero other
+importers once the fixture triage path was gone). The home page's
+"Portfolio-level signals" section and "Current allocation" bar were
+also removed outright — they rendered from fixture-only weight/
+concentration/correlation data with no live backend equivalent (no
+real dollar weights or cross-holding signal detection exists in the
+live system), and fabricating one just to keep the section would have
+violated the no-invented-signal guardrail. A fetch failure now shows a
+plain, honest error state ("Couldn't reach the finance backend...")
+instead of silently substituting demo data.
+
+### Update: the holding-detail page (`/securities/[ticker]`) is now real too
+The per-security detail page was still 100% fixture content (`lib/
+triage.ts`'s `holdingDetails`, a fake thesis/bull-case/bear-case/
+catalysts/timeline structure) even after the triage inbox went live.
+It's now backed by a new backend endpoint, `GET /api/v1/finance/
+holdings/{ticker}/detail` (returns the holding row, its most recent 20
+documents, and its most recent 5 analyses), rendered by `components/
+LiveHoldingDetailView.tsx`. There is no bull/bear/thesis/catalysts/
+timeline anymore — there's no real data for any of that — just the
+latest analysis's plain-language summary/sentiment/materiality, a
+documents list each linking to its real source URL, and citations
+rendered as "this claim cites: [document title]" links into that list.
+A ticker with zero fetched documents gets a clean "no recent filings
+or news found" state; a ticker not in `finance_holdings` at all 404s
+via Next's `notFound()`. The old fixture-only `HoldingDetailView.tsx`
+was deleted.
+
+### Update: `/portfolio-health` stays fixture-only — deliberate, not an oversight
+Colby explicitly decided to leave `/portfolio-health` on
+`lib/triage.ts`'s `healthHoldings`/`portfolioByTimeframe`/`riskContext`
+fixtures for now, separate from the triage-inbox and detail-page
+live-ification above — it has no live dollar-weight/price/return data
+behind it yet, and building that out is its own scope, not a
+drive-by addition to this ADR. Making Portfolio Health real is a
+follow-up that needs its own ADR before any code changes there.
 
 ## Scope for this weekend (explicit non-goals)
 - Only AAPL + NVDA need to be proven genuinely live end-to-end by the
