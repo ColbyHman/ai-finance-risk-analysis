@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   addLiveHolding,
   removeLiveHolding,
@@ -8,7 +9,9 @@ import {
   type AssetType,
   type LiveHolding,
   FinanceApiError,
+  RefreshInProgressError,
 } from "@/lib/live-finance";
+import { formatRelativeTime } from "@/lib/format";
 
 const ASSET_TYPES: { value: AssetType; label: string; gloss: string }[] = [
   { value: "equity", label: "Equity (stock)", gloss: "a share of ownership in a single company" },
@@ -16,6 +19,13 @@ const ASSET_TYPES: { value: AssetType; label: string; gloss: string }[] = [
   { value: "treasury", label: "Treasury", gloss: "a bond issued by the U.S. government" },
   { value: "index", label: "Index fund", gloss: "a fund that tracks a market index like the S&P 500" },
 ];
+
+/** In-flight status → a short, present-tense label for the row. */
+function inFlightLabel(status: string): string {
+  if (status === "pending") return "Queued…";
+  if (status === "running") return "Fetching…";
+  return "Working…";
+}
 
 interface Props {
   holdings: LiveHolding[];
@@ -32,6 +42,33 @@ export function HoldingsManager({ holdings, onChanged }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState<string | null>(null);
+  const [alreadyRefreshing, setAlreadyRefreshing] = useState<string | null>(null);
+
+  // While ANY holding has a server-reported in_flight job, poll for
+  // fresh state every ~4-5s so the "Queued…/Fetching…" indicator and
+  // last-updated time move on their own without a manual reload. The
+  // interval clears itself the moment nothing is in flight anymore.
+  const anyInFlight = holdings.some((h) => h.in_flight !== null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (anyInFlight && !pollRef.current) {
+      pollRef.current = setInterval(() => {
+        onChanged();
+      }, 4500);
+    }
+    if (!anyInFlight && pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anyInFlight]);
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -64,10 +101,15 @@ export function HoldingsManager({ holdings, onChanged }: Props) {
 
   async function handleRefresh(t: string) {
     setRefreshing(t);
+    setAlreadyRefreshing(null);
     try {
       await refreshLiveHolding(t);
-    } catch {
-      /* best-effort — the triage view will just show stale data until the next successful run */
+      onChanged();
+    } catch (err) {
+      if (err instanceof RefreshInProgressError) {
+        setAlreadyRefreshing(t);
+      }
+      /* otherwise best-effort — the triage view will just show stale data until the next successful run */
     } finally {
       setRefreshing(null);
     }
@@ -85,29 +127,53 @@ export function HoldingsManager({ holdings, onChanged }: Props) {
         {holdings.length === 0 && (
           <p className="m-0 px-3.5 py-2.5 text-[11.5px] text-[var(--ink-faint)]">No holdings yet — add one below.</p>
         )}
-        {holdings.map((h) => (
-          <div key={h.id} className="flex items-center justify-between gap-2.5 px-3.5 py-2.5 text-xs">
-            <span className="font-bold">{h.ticker}</span>
-            <span className="flex-1 text-[var(--ink-dim)]">{h.asset_type}</span>
-            <button
-              type="button"
-              disabled={refreshing === h.ticker}
-              onClick={() => handleRefresh(h.ticker)}
-              className="rounded-md border border-[var(--btn-border)] bg-[var(--btn-bg)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--btn-text)] disabled:opacity-50"
-              title="Fetch new filings/news for this holding right now, instead of waiting for the next scheduled check"
+        {holdings.map((h) => {
+          const locallyRefreshing = refreshing === h.ticker;
+          const serverInFlight = h.in_flight !== null;
+          const disableRefresh = locallyRefreshing || serverInFlight;
+          return (
+            <Link
+              key={h.id}
+              href={`/securities/${h.ticker}`}
+              className="flex items-center justify-between gap-2.5 px-3.5 py-2.5 text-xs no-underline transition-colors hover:bg-[var(--surface)]"
             >
-              {refreshing === h.ticker ? "Refreshing…" : "Refresh now"}
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => handleRemove(h.ticker)}
-              className="rounded-md border border-[var(--border)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--ink-dim)] disabled:opacity-50"
-            >
-              Remove
-            </button>
-          </div>
-        ))}
+              <span className="font-bold">{h.ticker}</span>
+              <span className="flex-1 text-[var(--ink-dim)]">{h.asset_type}</span>
+              <span className="text-[10.5px] text-[var(--ink-faint)]" title="Last completed ingest for this holding">
+                {serverInFlight
+                  ? inFlightLabel(h.in_flight!.status)
+                  : alreadyRefreshing === h.ticker
+                    ? "Already refreshing"
+                    : `Updated ${formatRelativeTime(h.last_ingested_at)}`}
+              </span>
+              <button
+                type="button"
+                disabled={disableRefresh}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleRefresh(h.ticker);
+                }}
+                className="rounded-md border border-[var(--btn-border)] bg-[var(--btn-bg)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--btn-text)] disabled:opacity-50"
+                title="Fetch new filings/news for this holding right now, instead of waiting for the next scheduled check"
+              >
+                {locallyRefreshing ? "Refreshing…" : serverInFlight ? inFlightLabel(h.in_flight!.status) : "Refresh now"}
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleRemove(h.ticker);
+                }}
+                className="rounded-md border border-[var(--border)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--ink-dim)] disabled:opacity-50"
+              >
+                Remove
+              </button>
+            </Link>
+          );
+        })}
       </div>
 
       <form onSubmit={handleAdd} className="flex flex-wrap items-center gap-2">

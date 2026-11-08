@@ -40,34 +40,88 @@ const GROUPS: { key: "act" | "watch"; label: string }[] = [
   { key: "watch", label: "Watch" },
 ];
 
+/** Lightweight placeholder matching HoldingsManager's own container
+ * dimensions — shown only while holdings are in flight, not a shared
+ * blocking "Loading…" message for the whole page. */
+function HoldingsSkeleton() {
+  return (
+    <div className="mb-3 animate-pulse rounded-[20px] bg-[var(--surface)] px-5 py-[18px]">
+      <div className="mb-3 h-3.5 w-40 rounded bg-[var(--surface-2)]" />
+      <div className="mb-3 overflow-hidden rounded-xl bg-[var(--surface-2)]">
+        {[0, 1].map((i) => (
+          <div key={i} className="flex items-center gap-2.5 border-b border-[var(--border)] px-3.5 py-2.5 last:border-b-0">
+            <div className="h-3 w-10 rounded bg-[var(--surface)]" />
+            <div className="h-3 flex-1 rounded bg-[var(--surface)]" />
+            <div className="h-5 w-16 rounded bg-[var(--surface)]" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Lightweight placeholder matching a triage card's rough dimensions. */
+function TriageSkeleton() {
+  return (
+    <div className="animate-pulse">
+      {[0, 1].map((i) => (
+        <div key={i} className="mb-2.5 flex items-start gap-4 rounded-[20px] bg-[var(--surface)] px-5 py-4">
+          <div className="min-w-0 flex-1">
+            <div className="mb-2.5 h-4 w-16 rounded bg-[var(--surface-2)]" />
+            <div className="mb-[5px] h-3.5 w-3/4 rounded bg-[var(--surface-2)]" />
+            <div className="h-3 w-1/2 rounded bg-[var(--surface-2)]" />
+          </div>
+          <div className="h-[38px] w-20 flex-shrink-0 rounded bg-[var(--surface-2)]" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function HomePage() {
   const [holdings, setHoldings] = useState<TriageHolding[]>([]);
   const [liveHoldings, setLiveHoldings] = useState<LiveHolding[]>([]);
   const [disclaimer, setDisclaimer] = useState<string>("");
   const [resolvedOpen, setResolvedOpen] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [triageLoading, setTriageLoading] = useState(true);
+  const [holdingsLoading, setHoldingsLoading] = useState(true);
 
-  async function loadLiveData() {
+  // Holdings and triage are fetched independently so each section can
+  // render — and show its own skeleton — the moment ITS OWN data
+  // resolves, instead of both waiting behind one shared gate.
+  async function loadHoldings() {
     try {
-      const [triage, rawHoldings] = await Promise.all([fetchLiveTriage(), fetchLiveHoldings()]);
+      const rawHoldings = await fetchLiveHoldings();
+      setLiveHoldings(rawHoldings);
+    } catch {
+      setLoadError(
+        "Couldn't reach the finance backend. Check that homelab-hub/services/conduit is running and NEXT_PUBLIC_FINANCE_API_BASE is correct.",
+      );
+      setLiveHoldings([]);
+    } finally {
+      setHoldingsLoading(false);
+    }
+  }
+
+  async function loadTriage() {
+    try {
+      const triage = await fetchLiveTriage();
       setHoldings(triage.holdings);
       setDisclaimer(triage.disclaimer);
-      setLiveHoldings(rawHoldings);
-      setLoadError(null);
     } catch {
       setLoadError(
         "Couldn't reach the finance backend. Check that homelab-hub/services/conduit is running and NEXT_PUBLIC_FINANCE_API_BASE is correct.",
       );
       setHoldings([]);
-      setLiveHoldings([]);
     } finally {
-      setLoading(false);
+      setTriageLoading(false);
     }
   }
 
   useEffect(() => {
-    loadLiveData();
+    loadHoldings();
+    loadTriage();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -94,8 +148,11 @@ export default function HomePage() {
           </div>
         )}
 
-        <HoldingsManager holdings={liveHoldings} onChanged={loadLiveData} />
-        {loading && <p className="mb-3 text-[11.5px] text-[var(--ink-faint)]">Loading live holdings…</p>}
+        {holdingsLoading ? (
+          <HoldingsSkeleton />
+        ) : (
+          <HoldingsManager holdings={liveHoldings} onChanged={loadHoldings} />
+        )}
 
         <div className="mb-3 flex items-center gap-2">
           <p className="m-0 text-[11.5px] font-bold uppercase tracking-[0.06em] text-[var(--ink-faint)]">
@@ -103,7 +160,9 @@ export default function HomePage() {
           </p>
         </div>
 
-        {!loading && active.length === 0 ? (
+        {triageLoading ? (
+          <TriageSkeleton />
+        ) : active.length === 0 ? (
           <div className="mb-2.5 rounded-[20px] bg-[var(--surface)] px-6 py-8 text-center">
             <div className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--green-dim)] text-xl text-[var(--green)]">
               ✓

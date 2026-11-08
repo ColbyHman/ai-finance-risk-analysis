@@ -22,6 +22,13 @@ export interface LiveHolding {
   active: boolean;
   created_at: string;
   updated_at: string;
+  /** null when this ticker has never completed a finance_ingest run. */
+  last_ingested_at: string | null;
+  /** Server-side truth for "is a refresh already running for this
+   * ticker" — null when idle, otherwise the job currently
+   * pending/running. Mirrors the backend's holdingListItem shape
+   * exactly (services/conduit/internal/modules/finance/handler.go). */
+  in_flight: { job_type: string; status: string } | null;
 }
 
 interface LiveTriageItem {
@@ -110,6 +117,13 @@ export class FinanceApiError extends Error {}
 
 export class HoldingNotFoundError extends FinanceApiError {}
 
+/** A refresh was requested while a finance_ingest/finance_analyze job
+ * for the same ticker was already pending/running — the backend's
+ * real dedup guard (409 Conflict, "refresh-in-progress"), not a
+ * generic failure. Lets the UI show "Already refreshing" instead of
+ * an error. */
+export class RefreshInProgressError extends FinanceApiError {}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   // AbortSignal.timeout bounds a slow/unreachable backend — without
   // this, a hung fetch during server-side rendering can hang the whole
@@ -133,6 +147,9 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     }
     if (res.status === 404 && kind === "holding-not-found") {
       throw new HoldingNotFoundError(message || "Not found");
+    }
+    if (res.status === 409 && kind === "refresh-in-progress") {
+      throw new RefreshInProgressError(message || "Already refreshing");
     }
     throw new FinanceApiError(message || `Request failed (${res.status})`);
   }
