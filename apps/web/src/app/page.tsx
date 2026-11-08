@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { TopNav } from "@/components/SiteNav";
+import { HoldingsManager } from "@/components/HoldingsManager";
 import {
   triageHoldings,
   portfolioSignals,
@@ -11,6 +12,7 @@ import {
   withRelevance,
   type TriageHolding,
 } from "@/lib/triage";
+import { isFinanceLive, fetchLiveTriage, fetchLiveHoldings, type LiveHolding } from "@/lib/live-finance";
 
 /** Mini sparkline — up/down accent follows the actual last-vs-first
  * sign of the series, never a hardcoded color (per clickable-triage.html). */
@@ -46,8 +48,38 @@ const GROUPS: { key: "act" | "watch"; label: string }[] = [
 ];
 
 export default function HomePage() {
-  const [holdings, setHoldings] = useState<TriageHolding[]>(triageHoldings);
+  const live = isFinanceLive();
+  const [holdings, setHoldings] = useState<TriageHolding[]>(live ? [] : triageHoldings);
+  const [liveHoldings, setLiveHoldings] = useState<LiveHolding[]>([]);
+  const [disclaimer, setDisclaimer] = useState<string>(triageDisclaimer);
   const [resolvedOpen, setResolvedOpen] = useState(false);
+  const [liveError, setLiveError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(live);
+
+  async function loadLiveData() {
+    try {
+      const [triage, rawHoldings] = await Promise.all([fetchLiveTriage(), fetchLiveHoldings()]);
+      setHoldings(triage.holdings);
+      setDisclaimer(triage.disclaimer);
+      setLiveHoldings(rawHoldings);
+      setLiveError(null);
+    } catch {
+      setLiveError(
+        "Couldn't reach the live finance backend — showing the demo fixture data instead. Set NEXT_PUBLIC_FINANCE_LIVE=0 to use fixtures intentionally.",
+      );
+      setHoldings(triageHoldings);
+      setDisclaimer(triageDisclaimer);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (live) {
+      loadLiveData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const ranked = useMemo(() => withRelevance(holdings), [holdings]);
   const active = ranked.filter((h) => !h.reviewed && (h.status === "act" || h.status === "watch"));
@@ -70,8 +102,19 @@ export default function HomePage() {
           </a>
         </div>
         <div className="my-[14px] mb-[22px] rounded-[10px] bg-[var(--surface)] px-3.5 py-2.5 text-[11.5px] leading-[1.5] text-[var(--ink-dim)]">
-          {triageDisclaimer}
+          {disclaimer}
         </div>
+        {live && liveError && (
+          <div className="mb-[14px] rounded-[10px] bg-[var(--amber-dim)] px-3.5 py-2.5 text-[11.5px] leading-[1.5] text-[var(--ink-dim)]">
+            {liveError}
+          </div>
+        )}
+        {live && (
+          <HoldingsManager holdings={liveHoldings} onChanged={loadLiveData} />
+        )}
+        {live && loading && (
+          <p className="mb-3 text-[11.5px] text-[var(--ink-faint)]">Loading live holdings…</p>
+        )}
 
         <div className="mb-3 flex items-center gap-2">
           <p className="m-0 text-[11.5px] font-bold uppercase tracking-[0.06em] text-[var(--ink-faint)]">
