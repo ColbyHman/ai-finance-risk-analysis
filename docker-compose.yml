@@ -17,7 +17,15 @@ services:
       - "3210:3000"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/"]
+      # 127.0.0.1, not "localhost" — Alpine/musl's resolver prefers the
+      # IPv6 loopback (::1) for "localhost", and BusyBox wget doesn't
+      # fall back to IPv4 when that connect is refused. Node's
+      # standalone server only binds IPv4 (HOSTNAME=0.0.0.0, see
+      # Dockerfile), so "localhost" healthchecked instant "Connection
+      # refused" even while the app was genuinely up and serving fine
+      # on IPv4 — confirmed via `docker inspect`: Running=true,
+      # ExitCode=0, no crash, just the wrong address family.
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/"]
       interval: 30s
       timeout: 10s
       retries: 3
