@@ -192,3 +192,43 @@ export async function refreshLiveHolding(ticker: string): Promise<void> {
 export async function fetchHoldingDetail(ticker: string): Promise<LiveHoldingDetail> {
   return apiFetch<LiveHoldingDetail>(`/holdings/${encodeURIComponent(ticker)}/detail`);
 }
+
+/** One holding's row in Portfolio Health. price/value/allocation_pct
+ * are null when the live price lookup failed for this ticker (dead
+ * ticker, upstream hiccup) — the backend still returns the holding so
+ * the page can show "price unavailable" instead of dropping the row.
+ * Mirrors the backend's portfolioHoldingSummary shape exactly
+ * (services/conduit/internal/modules/finance/handler.go). */
+export interface LivePortfolioHolding {
+  ticker: string;
+  units: number;
+  price: number | null;
+  currency?: string;
+  value: number | null;
+  allocation_pct: number | null;
+}
+
+/** Mirrors the backend's portfolioSummaryResponse shape exactly. */
+export interface LivePortfolioSummary {
+  holdings: LivePortfolioHolding[];
+  total_value: number;
+}
+
+/** Fetches live portfolio summary: units, live price, computed value,
+ * and allocation % per active holding, plus a portfolio total. This
+ * is pure value/allocation display — no cost basis, no gain/loss,
+ * never a buy/sell/hold signal. */
+export async function fetchPortfolioSummary(): Promise<LivePortfolioSummary> {
+  return apiFetch<LivePortfolioSummary>("/portfolio/summary");
+}
+
+/** Persists how many units of ticker the user holds — the only field
+ * this endpoint accepts. Throws HoldingNotFoundError for an unknown
+ * ticker (same 404 shape as fetchHoldingDetail). */
+export async function updateHoldingUnits(ticker: string, units: number): Promise<LiveHolding> {
+  const data = await apiFetch<{ holding: LiveHolding }>(`/holdings/${encodeURIComponent(ticker)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ units }),
+  });
+  return data.holding;
+}
