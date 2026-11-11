@@ -1,37 +1,33 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TopNav } from "@/components/SiteNav";
 import { HoldingsManager } from "@/components/HoldingsManager";
+import { MarketStatus } from "@/components/MarketStatus";
+import { IntradaySpark } from "@/components/PriceChart";
+import { UpcomingEvents } from "@/components/UpcomingEvents";
+import { useMarket } from "@/components/useMarket";
 import type { TriageHolding } from "@/lib/triage";
-import { fetchLiveTriage, fetchLiveHoldings, type LiveHolding } from "@/lib/live-finance";
+import { fetchLiveTriage, fetchLiveHoldings, type LiveHolding, type LiveQuote } from "@/lib/live-finance";
+import { changeLabel, formatPct, formatPrice, moveColor, nearestEventChip, RESEARCH_POLL_MS } from "@/lib/market";
 
-/** Mini sparkline — up/down accent follows the actual last-vs-first
- * sign of the series, never a hardcoded color (per clickable-triage.html). */
-function Spark({ values }: { values: number[] }) {
-  const w = 80;
-  const h = 38;
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-  const pts = values.map((v, i) => [(i / (values.length - 1)) * w, h - 5 - ((v - min) / range) * (h - 10)]);
-  const line = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ");
-  const area = `${line} L ${w} ${h} L 0 ${h} Z`;
-  const up = values[values.length - 1] >= values[0];
-  const stroke = up ? "var(--green)" : "var(--red)";
-  const gid = `spark-${values.join("-")}`;
+/** Price, day change and the nearest dated event for a triage card. */
+function QuoteLine({ q, label }: { q: LiveQuote | undefined; label: string }) {
+  if (!q || q.error || q.price == null) return null;
+  const chip = nearestEventChip(q);
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="h-[38px] w-full block">
-      <defs>
-        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={stroke} stopOpacity={0.3} />
-          <stop offset="100%" stopColor={stroke} stopOpacity={0} />
-        </linearGradient>
-      </defs>
-      <path d={area} fill={`url(#${gid})`} />
-      <path d={line} fill="none" stroke={stroke} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <>
+      <span className="font-mono text-[12.5px] tabular-nums text-[var(--ink-dim)]">{formatPrice(q.price, q.currency)}</span>
+      <span className={`font-mono text-[12px] tabular-nums ${moveColor(q.change_pct)}`} title={`Change ${label}`}>
+        {formatPct(q.change_pct)}
+      </span>
+      {chip && (
+        <span className="rounded-md border border-[var(--blue)] px-1.5 py-[1px] text-[10px] font-bold text-[var(--blue)]" data-testid="event-chip">
+          {chip}
+        </span>
+      )}
+    </>
   );
 }
 
@@ -86,6 +82,8 @@ export default function HomePage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [triageLoading, setTriageLoading] = useState(true);
   const [holdingsLoading, setHoldingsLoading] = useState(true);
+  const market = useMarket();
+  const label = changeLabel(market.data?.market);
 
   // Holdings and triage are fetched independently so each section can
   // render — and show its own skeleton — the moment ITS OWN data
@@ -107,7 +105,12 @@ export default function HomePage() {
   async function loadTriage() {
     try {
       const triage = await fetchLiveTriage();
-      setHoldings(triage.holdings);
+      // "Mark reviewed" is client-side only for now: keep those marks
+      // when a background refresh brings the list back.
+      setHoldings((prev) => {
+        const reviewed = new Set(prev.filter((h) => h.reviewed).map((h) => h.ticker));
+        return triage.holdings.map((h) => (reviewed.has(h.ticker) ? { ...h, reviewed: true } : h));
+      });
       setDisclaimer(triage.disclaimer);
     } catch {
       setLoadError(
@@ -122,6 +125,14 @@ export default function HomePage() {
   useEffect(() => {
     loadHoldings();
     loadTriage();
+    // Research runs every 30 minutes per holding on the backend; pick
+    // up new reads without a reload. Skipped while the tab is hidden.
+    const id = setInterval(() => {
+      if (document.hidden) return;
+      loadHoldings();
+      loadTriage();
+    }, RESEARCH_POLL_MS);
+    return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -137,6 +148,12 @@ export default function HomePage() {
       <TopNav current="/" />
       <div className="mx-auto max-w-[1020px] px-6 pb-[60px]">
         <h1 className="mt-[18px] mb-1 text-xl font-bold tracking-tight">Portfolio</h1>
+        <MarketStatus
+          session={market.data?.market}
+          fetchedAt={market.fetchedAt}
+          researchMinutes={market.data?.research_interval_minutes}
+          error={market.error}
+        />
         {disclaimer && (
           <div className="my-[14px] mb-[22px] rounded-[10px] bg-[var(--surface)] px-3.5 py-2.5 text-[11.5px] leading-[1.5] text-[var(--ink-dim)]">
             {disclaimer}
@@ -151,7 +168,7 @@ export default function HomePage() {
         {holdingsLoading ? (
           <HoldingsSkeleton />
         ) : (
-          <HoldingsManager holdings={liveHoldings} onChanged={loadHoldings} />
+          <HoldingsManager holdings={liveHoldings} onChanged={loadHoldings} quote={market.quote} changeLabel={label} />
         )}
 
         <div className="mb-3 flex items-center gap-2">
@@ -195,8 +212,9 @@ export default function HomePage() {
                   >
                     <div className="min-w-0 flex-1">
                       <div className="mb-[5px] flex items-center justify-between gap-2.5">
-                        <div className="flex items-baseline gap-2">
+                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                           <span className="text-[15px] font-bold tracking-tight">{h.ticker}</span>
+                          <QuoteLine q={market.quote(h.ticker)} label={label} />
                         </div>
                         <span
                           className={`rounded-lg border px-[11px] py-1 text-[10.5px] font-bold uppercase tracking-[0.04em] text-[var(--ink-on-bright)] ${
@@ -225,8 +243,8 @@ export default function HomePage() {
                         </button>
                       </div>
                     </div>
-                    <div className="w-20 flex-shrink-0">
-                      <Spark values={h.trend} />
+                    <div className="w-20 flex-shrink-0" title={`${h.ticker} ${label === "today" ? "today" : label}, 5-minute prices; dashed line = previous close`}>
+                      <IntradaySpark points={market.quote(h.ticker)?.intraday ?? []} baseline={market.quote(h.ticker)?.previous_close ?? null} />
                     </div>
                   </Link>
                 ))}
@@ -268,10 +286,15 @@ export default function HomePage() {
                 <span className="mx-3.5 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[var(--ink-dim)]">
                   {h.headline}
                 </span>
+                <span className={`font-mono tabular-nums ${moveColor(market.quote(h.ticker)?.change_pct)}`}>
+                  {formatPct(market.quote(h.ticker)?.change_pct)}
+                </span>
               </Link>
             ))}
           </div>
         )}
+
+        <UpcomingEvents quotes={market.data?.quotes} fed={market.data?.fed_meetings} />
       </div>
     </div>
   );
