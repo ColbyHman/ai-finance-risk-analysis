@@ -95,19 +95,17 @@ function apiBase(): string {
 
 // Deterministic, UI-only visual accents for live holdings — the
 // backend doesn't track portfolio weights/colors (out of scope for
-// ADR 0015), so these are synthesized for the sparkline the triage
-// inbox renders.
+// ADR 0015). The inbox's sparklines are real intraday prices now
+// (ADR 0016, lib/market.ts), not synthesized.
 const PALETTE = ["var(--green)", "#60a5fa", "#38bdf8", "var(--swatch-neutral-2)", "var(--swatch-neutral-1)", "var(--ink-faint)"];
 
 function adaptTriageItem(item: LiveTriageItem, index: number): TriageHolding {
-  const flat = [50, 50, 50, 50, 50, 50, 50, 50];
   return {
     ticker: item.ticker,
     status: item.status,
     headline: item.headline,
     summary: item.summary,
     reason: item.reason,
-    trend: flat,
     reviewed: item.reviewed,
     color: PALETTE[index % PALETTE.length],
   };
@@ -206,12 +204,19 @@ export interface LivePortfolioHolding {
   currency?: string;
   value: number | null;
   allocation_pct: number | null;
+  /** units × (price − previous close); null without a previous close. */
+  day_change: number | null;
+  day_change_pct: number | null;
 }
 
 /** Mirrors the backend's portfolioSummaryResponse shape exactly. */
 export interface LivePortfolioSummary {
   holdings: LivePortfolioHolding[];
   total_value: number;
+  /** Sum of each position's units × (price − previous close). */
+  total_day_change: number;
+  total_day_change_pct: number | null;
+  market: LiveMarketSession;
 }
 
 /** Fetches live portfolio summary: units, live price, computed value,
@@ -231,4 +236,79 @@ export async function updateHoldingUnits(ticker: string, units: number): Promise
     body: JSON.stringify({ units }),
   });
   return data.holding;
+}
+
+// ---------------------------------------------------------------------------
+// Market data (ADR 0016) — GET /market. Mirrors MarketSession /
+// MarketQuote in services/conduit/internal/modules/finance/market.go
+// exactly; change both sides together.
+// ---------------------------------------------------------------------------
+
+export type MarketState = "pre" | "open" | "post" | "closed";
+
+export interface LiveMarketSession {
+  state: MarketState;
+  /** Time of the last regular-session trade; while closed, the close
+   * the prices are from. */
+  as_of: string | null;
+  /** Next regular-session open, when published. */
+  next_open: string | null;
+  timezone: string;
+}
+
+/** Dates are YYYY-MM-DD calendar dates in New York. */
+export interface LiveDividend {
+  yield_pct: number | null;
+  /** Only set when an announced ex-dividend date is today or later —
+   * never projected from past payments. */
+  next_ex_date: string | null;
+  next_pay_date: string | null;
+  /** Last ex-date in the source's history (it can trail by weeks). */
+  last_ex_date: string | null;
+  last_amount: number | null;
+  frequency: "" | "monthly" | "quarterly" | "semiannual" | "annual";
+  trailing_amount: number | null;
+}
+
+export interface LiveEarnings {
+  date: string;
+  /** The source's own flag: true until the company confirms the date. */
+  is_estimate: boolean;
+}
+
+export interface LiveQuote {
+  ticker: string;
+  name?: string;
+  currency?: string;
+  price: number | null;
+  previous_close: number | null;
+  change: number | null;
+  change_pct: number | null;
+  day_high: number | null;
+  day_low: number | null;
+  volume: number | null;
+  fifty_two_week_high: number | null;
+  fifty_two_week_low: number | null;
+  market_time: string | null;
+  /** 5-minute closes for the latest session: t = unix seconds. */
+  intraday: { t: number; p: number }[];
+  dividend: LiveDividend | null;
+  earnings: LiveEarnings | null;
+  beta: number | null;
+  trailing_pe: number | null;
+  /** Set when this ticker's lookup failed; every other field is null. */
+  error?: string;
+}
+
+export interface LiveMarket {
+  market: LiveMarketSession;
+  quotes: LiveQuote[];
+  research_interval_minutes: number;
+  source: string;
+}
+
+/** Market data for every active holding, or just `tickers`. */
+export async function fetchMarket(tickers?: string[]): Promise<LiveMarket> {
+  const qs = tickers?.length ? `?tickers=${encodeURIComponent(tickers.join(","))}` : "";
+  return apiFetch<LiveMarket>(`/market${qs}`);
 }

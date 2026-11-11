@@ -31,7 +31,6 @@ export interface TriageHolding {
   headline: string;
   summary?: string;
   reason?: string;
-  trend: number[];
   /** Flips client-side when "Mark reviewed" is clicked — no
    * persistence back to the backend yet. */
   reviewed: boolean;

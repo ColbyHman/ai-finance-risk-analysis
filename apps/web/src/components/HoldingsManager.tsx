@@ -8,10 +8,12 @@ import {
   refreshLiveHolding,
   type AssetType,
   type LiveHolding,
+  type LiveQuote,
   FinanceApiError,
   RefreshInProgressError,
 } from "@/lib/live-finance";
 import { formatRelativeTime } from "@/lib/format";
+import { formatPct, formatPrice, moveColor } from "@/lib/market";
 
 const ASSET_TYPES: { value: AssetType; label: string; gloss: string }[] = [
   { value: "equity", label: "Equity (stock)", gloss: "a share of ownership in a single company" },
@@ -30,13 +32,17 @@ function inFlightLabel(status: string): string {
 interface Props {
   holdings: LiveHolding[];
   onChanged: () => void;
+  /** Market data per ticker (ADR 0016); undefined while loading. */
+  quote?: (ticker: string) => LiveQuote | undefined;
+  /** "today", or the session's weekday when prices are from an earlier day. */
+  changeLabel?: string;
 }
 
 /** Holdings management UI for live mode (ADR 0015): add/remove a
  * tracked security. No buy/sell/hold language anywhere here — this
  * only adds or removes what the system watches, it never suggests an
  * action on the position itself. */
-export function HoldingsManager({ holdings, onChanged }: Props) {
+export function HoldingsManager({ holdings, onChanged, quote, changeLabel = "today" }: Props) {
   const [ticker, setTicker] = useState("");
   const [assetType, setAssetType] = useState<AssetType>("equity");
   const [busy, setBusy] = useState(false);
@@ -131,20 +137,37 @@ export function HoldingsManager({ holdings, onChanged }: Props) {
           const locallyRefreshing = refreshing === h.ticker;
           const serverInFlight = h.in_flight !== null;
           const disableRefresh = locallyRefreshing || serverInFlight;
+          const statusText = serverInFlight
+            ? inFlightLabel(h.in_flight!.status)
+            : alreadyRefreshing === h.ticker
+              ? "Already refreshing"
+              : `Researched ${formatRelativeTime(h.last_ingested_at)}`;
           return (
             <Link
               key={h.id}
               href={`/securities/${h.ticker}`}
               className="flex items-center justify-between gap-2.5 px-3.5 py-2.5 text-xs no-underline transition-colors hover:bg-[var(--surface)]"
             >
-              <span className="font-bold">{h.ticker}</span>
-              <span className="flex-1 text-[var(--ink-dim)]">{h.asset_type}</span>
-              <span className="text-[10.5px] text-[var(--ink-faint)]" title="Last completed ingest for this holding">
-                {serverInFlight
-                  ? inFlightLabel(h.in_flight!.status)
-                  : alreadyRefreshing === h.ticker
-                    ? "Already refreshing"
-                    : `Updated ${formatRelativeTime(h.last_ingested_at)}`}
+              {/* On a phone the research status moves under the ticker so
+                  the row fits 390px without clipping the buttons. */}
+              <span className="w-12 font-bold max-sm:min-w-0 max-sm:flex-1">
+                {h.ticker}
+                <span className="block text-[10px] font-normal text-[var(--ink-faint)] sm:hidden">{statusText}</span>
+              </span>
+              {(() => {
+                const q = quote?.(h.ticker);
+                return (
+                  <span className="flex w-[150px] items-baseline gap-2 font-mono tabular-nums max-sm:w-auto max-sm:flex-col max-sm:items-end max-sm:gap-0" data-testid="holding-quote">
+                    <span className="text-[var(--ink)]">{q && !q.error ? formatPrice(q.price, q.currency) : "—"}</span>
+                    <span className={`text-[11px] ${moveColor(q?.change_pct)}`} title={`Change ${changeLabel}`}>
+                      {q && !q.error ? formatPct(q.change_pct) : ""}
+                    </span>
+                  </span>
+                );
+              })()}
+              <span className="flex-1 text-[var(--ink-dim)] max-sm:hidden">{h.asset_type}</span>
+              <span className="text-[10.5px] text-[var(--ink-faint)] max-sm:hidden" title="Last completed research run for this holding (news + filings)">
+                {statusText}
               </span>
               <button
                 type="button"
@@ -154,10 +177,18 @@ export function HoldingsManager({ holdings, onChanged }: Props) {
                   e.stopPropagation();
                   handleRefresh(h.ticker);
                 }}
-                className="rounded-md border border-[var(--btn-border)] bg-[var(--btn-bg)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--btn-text)] disabled:opacity-50"
+                className="whitespace-nowrap rounded-md border border-[var(--btn-border)] bg-[var(--btn-bg)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--btn-text)] disabled:opacity-50"
                 title="Fetch new filings/news for this holding right now, instead of waiting for the next scheduled check"
               >
-                {locallyRefreshing ? "Refreshing…" : serverInFlight ? inFlightLabel(h.in_flight!.status) : "Refresh now"}
+                {locallyRefreshing ? (
+                  "Refreshing…"
+                ) : serverInFlight ? (
+                  inFlightLabel(h.in_flight!.status)
+                ) : (
+                  <>
+                    Refresh<span className="max-sm:hidden"> now</span>
+                  </>
+                )}
               </button>
               <button
                 type="button"
@@ -167,7 +198,7 @@ export function HoldingsManager({ holdings, onChanged }: Props) {
                   e.stopPropagation();
                   handleRemove(h.ticker);
                 }}
-                className="rounded-md border border-[var(--border)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--ink-dim)] disabled:opacity-50"
+                className="whitespace-nowrap rounded-md border border-[var(--border)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--ink-dim)] disabled:opacity-50"
               >
                 Remove
               </button>

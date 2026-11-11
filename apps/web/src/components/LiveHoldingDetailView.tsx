@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import type { LiveHoldingDetail, LiveDocument, LiveAnalysis } from "@/lib/live-finance";
+import { MarketPanel } from "./MarketPanel";
+import { useMarket } from "./useMarket";
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
   equity: "Equity (a share of ownership in a single company)",
@@ -106,6 +108,8 @@ function AnalysisCard({ analysis, documents }: { analysis: LiveAnalysis; documen
 }
 
 export function LiveHoldingDetailView({ detail }: { detail: LiveHoldingDetail }) {
+  const market = useMarket([detail.ticker]);
+  const quote = market.quote(detail.ticker);
   const latest = detail.analyses[0];
   const olderAnalyses = detail.analyses.slice(1);
 
@@ -118,7 +122,10 @@ export function LiveHoldingDetailView({ detail }: { detail: LiveHoldingDetail })
       <div className="mb-5 rounded-3xl bg-[var(--surface)] px-7 py-6">
         <div className="flex flex-wrap items-start justify-between gap-3.5">
           <div>
-            <p className="m-0 text-[28px] font-bold tracking-tight">{detail.ticker}</p>
+            <p className="m-0 text-[28px] font-bold tracking-tight">
+              {detail.ticker}
+              {quote?.name && <span className="ml-2.5 text-[15px] font-semibold text-[var(--ink-dim)]">{quote.name}</span>}
+            </p>
             <p className="mt-[3px] text-[12.5px] text-[var(--ink-faint)]">
               {ASSET_TYPE_LABELS[detail.asset_type] || detail.asset_type}
             </p>
@@ -130,6 +137,15 @@ export function LiveHoldingDetailView({ detail }: { detail: LiveHoldingDetail })
           )}
         </div>
       </div>
+
+      <MarketPanel
+        quote={quote}
+        session={market.data?.market}
+        fetchedAt={market.fetchedAt}
+        researchMinutes={market.data?.research_interval_minutes}
+        error={market.error}
+        isFund={detail.asset_type !== "equity"}
+      />
 
       {detail.documents.length === 0 ? (
         <div className="mb-4 rounded-[20px] bg-[var(--surface)] px-6 py-8 text-center">
