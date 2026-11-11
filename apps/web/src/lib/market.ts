@@ -260,3 +260,34 @@ export function dividendSummary(d: LiveDividend | null | undefined, currency?: s
   return parts.join(" · ") || "Dividend history unavailable";
 }
 
+// ---------------------------------------------------------------------------
+// Diversification wording (ADR 0017): numbers only. The one kind of
+// words allowed is a fraction that is arithmetically true of the
+// number itself ("62% — a majority"). No thresholds from outside the
+// data, nothing that says whether a figure is good or bad.
+// ---------------------------------------------------------------------------
+
+/** The strongest plain fraction that is true of `pct`, or null.
+ * 62 → "a majority", 70 → "more than two-thirds", 30 → "more than a
+ * quarter". Strictly greater-than, so it is never rounded into being
+ * true. */
+export function shareWords(pct: number): string | null {
+  if (pct > 75) return "more than three-quarters";
+  if (pct > 200 / 3) return "more than two-thirds";
+  if (pct > 50) return "a majority";
+  if (pct > 100 / 3) return "more than a third";
+  if (pct > 25) return "more than a quarter";
+  return null;
+}
+
+export function formatShare(pct: number, digits = 1): string {
+  return `${pct.toFixed(digits)}%`;
+}
+
+export const ASSET_CLASS_LABEL: Record<string, string> = {
+  stocks: "Stocks",
+  bonds: "Bonds",
+  cash: "Cash",
+  other: "Other",
+  unclassified: "Unclassified",
+};

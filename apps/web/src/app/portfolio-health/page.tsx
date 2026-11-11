@@ -19,10 +19,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TopNav } from "@/components/SiteNav";
 import { MarketStatus } from "@/components/MarketStatus";
+import { DiversificationSection } from "@/components/DiversificationSection";
 import {
+  fetchDiversification,
   fetchPortfolioSummary,
   updateHoldingUnits,
   FinanceApiError,
+  type LiveDiversification,
   type LiveMarketSession,
   type LivePortfolioHolding,
 } from "@/lib/live-finance";
@@ -40,6 +43,8 @@ export default function PortfolioHealthPage() {
   const [dayChange, setDayChange] = useState<{ value: number; pct: number | null } | null>(null);
   const [session, setSession] = useState<LiveMarketSession | undefined>();
   const [fetchedAt, setFetchedAt] = useState<Date | null>(null);
+  const [diversification, setDiversification] = useState<LiveDiversification | null>(null);
+  const [divError, setDivError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   // Per-ticker local input text + save state, keyed by ticker so each
   // row's editor is independent.
@@ -48,6 +53,14 @@ export default function PortfolioHealthPage() {
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const load = useCallback(async () => {
+    // Diversification is fetched alongside, not after: it's independent
+    // of the summary and shouldn't wait behind it (or fail with it).
+    fetchDiversification()
+      .then((d) => {
+        setDiversification(d);
+        setDivError(null);
+      })
+      .catch(() => setDivError("Couldn't load the diversification figures right now."));
     try {
       const data = await fetchPortfolioSummary();
       setHoldings(data.holdings);
@@ -243,6 +256,8 @@ export default function PortfolioHealthPage() {
             </tbody>
           </table>
         </div>
+
+        <DiversificationSection d={diversification} error={divError} />
       </div>
     </div>
   );

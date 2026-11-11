@@ -312,3 +312,61 @@ export async function fetchMarket(tickers?: string[]): Promise<LiveMarket> {
   const qs = tickers?.length ? `?tickers=${encodeURIComponent(tickers.join(","))}` : "";
   return apiFetch<LiveMarket>(`/market${qs}`);
 }
+
+// ---------------------------------------------------------------------------
+// Diversification (ADR 0017) — GET /portfolio/diversification. Mirrors
+// Diversification in services/conduit/internal/modules/finance/
+// diversification.go exactly. Percentages are 0–100 and of the whole
+// portfolio unless the field name says otherwise.
+// ---------------------------------------------------------------------------
+
+export interface LiveDiversification {
+  total_value: number;
+  holdings: { ticker: string; value: number; weight_pct: number; is_fund: boolean }[];
+  concentration: {
+    holding_count: number;
+    largest_ticker: string;
+    largest_pct: number;
+    top3_pct: number;
+    /** 1 ÷ the sum of squared weights: how many equal-sized positions
+     * would be this concentrated. */
+    effective_holdings: number;
+  };
+  asset_mix: { class: "stocks" | "bonds" | "cash" | "other" | "unclassified"; pct: number; value: number }[];
+  stock_value_pct: number;
+  sectors: {
+    key: string;
+    label: string;
+    pct_of_stocks: number;
+    pct_of_portfolio: number;
+    direct_pct: number;
+    via_funds_pct: number;
+  }[];
+  sector_coverage_pct: number;
+  companies: {
+    symbol: string;
+    name?: string;
+    total_pct: number;
+    direct_pct: number;
+    via_funds: { fund: string; pct: number }[];
+  }[];
+  /** How much of each fund its published top holdings cover. */
+  fund_coverage: { fund: string; top_holdings_pct: number; count: number }[];
+  correlation: {
+    tickers: string[];
+    /** Correlation of daily returns, −1…1; null under 60 shared days. */
+    matrix: (number | null)[][];
+    /** Share of days both moved the same direction, ignoring flat days. */
+    same_direction_pct: (number | null)[][];
+    average_pairwise: number | null;
+    from: string;
+    to: string;
+  } | null;
+  missing: { ticker: string; what: string }[];
+  unpriced: string[];
+  source: string;
+}
+
+export async function fetchDiversification(): Promise<LiveDiversification> {
+  return apiFetch<LiveDiversification>("/portfolio/diversification");
+}
