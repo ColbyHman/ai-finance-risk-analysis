@@ -294,7 +294,7 @@ export default function HomePage() {
           </div>
         )}
 
-        <UpcomingEvents quotes={market.data?.quotes} />
+        <UpcomingEvents quotes={market.data?.quotes} fed={market.data?.fed_meetings} />
       </div>
     </div>
   );

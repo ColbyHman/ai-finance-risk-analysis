@@ -7,7 +7,7 @@
  * Everything market-related is shown in New York time, the exchange's
  * own clock, and labelled "ET".
  */
-import type { LiveDividend, LiveMarketSession, LiveQuote, MarketState } from "./live-finance";
+import type { LiveDividend, LiveFedMeeting, LiveMarketSession, LiveQuote, MarketState } from "./live-finance";
 
 export const MARKET_TZ = "America/New_York";
 
@@ -202,19 +202,41 @@ export const FREQUENCY_LABEL: Record<string, string> = {
   annual: "Pays once a year",
 };
 
-/** One dated thing coming up for a holding. */
+/** One dated thing coming up — for a holding, or (kind "fed") for the
+ * whole market, in which case ticker is "Fed". */
 export interface UpcomingEvent {
   ticker: string;
   date: string;
-  kind: "earnings" | "ex_dividend";
+  kind: "earnings" | "ex_dividend" | "fed";
   title: string;
   detail: string;
 }
 
+/** "Dec 8–9" for a meeting's start and decision dates. */
+function meetingDays(start: string, end: string): string {
+  const s = formatCalendarDate(start).replace(/^\w+, /, "");
+  const e = formatCalendarDate(end).replace(/^\w+, /, "");
+  return start.slice(0, 7) === end.slice(0, 7) ? `${s}–${e.split(" ")[1]}` : `${s} – ${e}`;
+}
+
 /** Earnings and announced ex-dividend dates within `days` — only
  * dates the source has published, never projected. Sorted by date. */
-export function upcomingEvents(quotes: LiveQuote[], days = 30, now?: Date): UpcomingEvent[] {
+export function upcomingEvents(quotes: LiveQuote[], days = 30, now?: Date, fed: LiveFedMeeting[] = []): UpcomingEvent[] {
   const out: UpcomingEvent[] = [];
+  for (const f of fed) {
+    const n = daysUntil(f.decision_date, now);
+    if (n >= 0 && n <= days) {
+      out.push({
+        ticker: "Fed",
+        date: f.decision_date,
+        kind: "fed",
+        title: "Fed interest-rate decision",
+        detail: `Announced 2:00 PM ET after the ${meetingDays(f.start_date, f.decision_date)} meeting${
+          f.has_projections ? ", with the Fed's economic projections" : ""
+        } · applies to the whole market, not one holding`,
+      });
+    }
+  }
   for (const q of quotes) {
     const e = q.earnings;
     if (e && daysUntil(e.date, now) >= 0 && daysUntil(e.date, now) <= days) {

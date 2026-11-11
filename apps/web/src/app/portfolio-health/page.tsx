@@ -20,6 +20,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { TopNav } from "@/components/SiteNav";
 import { MarketStatus } from "@/components/MarketStatus";
 import { DiversificationSection } from "@/components/DiversificationSection";
+import { DividendIncome } from "@/components/DividendIncome";
+import { useMarket } from "@/components/useMarket";
 import {
   fetchDiversification,
   fetchPortfolioSummary,
@@ -45,6 +47,8 @@ export default function PortfolioHealthPage() {
   const [fetchedAt, setFetchedAt] = useState<Date | null>(null);
   const [diversification, setDiversification] = useState<LiveDiversification | null>(null);
   const [divError, setDivError] = useState<string | null>(null);
+  // Dividend figures come from the same cached /market call the inbox uses.
+  const market = useMarket();
   const [loadError, setLoadError] = useState<string | null>(null);
   // Per-ticker local input text + save state, keyed by ticker so each
   // row's editor is independent.
@@ -256,6 +260,8 @@ export default function PortfolioHealthPage() {
             </tbody>
           </table>
         </div>
+
+        <DividendIncome holdings={holdings} totalValue={totalValue} quote={market.quote} />
 
         <DiversificationSection d={diversification} error={divError} />
       </div>

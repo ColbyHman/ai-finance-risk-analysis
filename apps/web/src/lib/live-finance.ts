@@ -300,11 +300,22 @@ export interface LiveQuote {
   error?: string;
 }
 
+/** A scheduled FOMC meeting from the Fed's own calendar. The rate
+ * decision is announced at 2:00 PM ET on decision_date. */
+export interface LiveFedMeeting {
+  start_date: string;
+  decision_date: string;
+  /** The Fed also publishes its economic projections at this meeting. */
+  has_projections: boolean;
+}
+
 export interface LiveMarket {
   market: LiveMarketSession;
   quotes: LiveQuote[];
   research_interval_minutes: number;
   source: string;
+  /** Next scheduled Fed rate decisions; empty if the calendar couldn't be read. */
+  fed_meetings: LiveFedMeeting[];
 }
 
 /** Market data for every active holding, or just `tickers`. */
