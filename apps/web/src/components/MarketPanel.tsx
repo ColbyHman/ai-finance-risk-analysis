@@ -172,7 +172,7 @@ export function MarketPanel({
         </div>
       </dl>
       <p className="m-0 mt-4 text-[10.5px] text-[var(--ink-faint)]">
-        Market data: Yahoo Finance. Describes the security — not a recommendation to buy, sell, or hold it.
+        Market data: Yahoo Finance. Describes the security, not a recommendation to buy, sell, or hold it.
       </p>
     </section>
   );

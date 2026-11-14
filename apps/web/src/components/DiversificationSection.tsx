@@ -36,7 +36,7 @@ function Share({ pct, of }: { pct: number; of?: string }) {
     <>
       <span className="font-mono tabular-nums text-[var(--ink)]">{formatShare(pct)}</span>
       {of && <span className="text-[var(--ink-dim)]"> {of}</span>}
-      {words && <span className="text-[var(--ink-dim)]"> — {words}</span>}
+      {words && <span className="text-[var(--ink-dim)]"> · {words}</span>}
     </>
   );
 }
@@ -83,7 +83,7 @@ function AssetMix({ d }: { d: LiveDiversification }) {
       </ul>
       {d.asset_mix[0] && shareWords(d.asset_mix[0].pct) && (
         <p className="m-0 mt-2 text-[12px] text-[var(--ink-dim)]">
-          {ASSET_CLASS_LABEL[d.asset_mix[0].class]} are {formatShare(d.asset_mix[0].pct)} of the portfolio — {shareWords(d.asset_mix[0].pct)}.
+          {ASSET_CLASS_LABEL[d.asset_mix[0].class]} are {formatShare(d.asset_mix[0].pct)} of the portfolio, {shareWords(d.asset_mix[0].pct)}.
         </p>
       )}
     </Card>
@@ -103,7 +103,7 @@ function Sectors({ d }: { d: LiveDiversification }) {
       <p className="m-0 mb-3 text-[12.5px]">
         {top.label}: <Share pct={top.pct_of_portfolio} of="of the portfolio" />
         <span className="text-[var(--ink-dim)]">
-          {" "}· {formatShare(top.pct_of_stocks)} of the stock portion{shareWords(top.pct_of_stocks) ? ` — ${shareWords(top.pct_of_stocks)}` : ""}
+          {" "}· {formatShare(top.pct_of_stocks)} of the stock portion{shareWords(top.pct_of_stocks) ? `, ${shareWords(top.pct_of_stocks)}` : ""}
         </span>
       </p>
       <div className="flex flex-col gap-1.5">
@@ -263,7 +263,7 @@ export function DiversificationSection({ d, error }: { d: LiveDiversification | 
       <p className="mb-1 text-[11.5px] font-bold uppercase tracking-[0.06em] text-[var(--ink-faint)]">Diversification</p>
       <p className="m-0 mb-3.5 max-w-[620px] text-[11.5px] leading-[1.5] text-[var(--ink-dim)]">
         How spread out the portfolio is, calculated from units × latest price and what each fund publishes about its holdings.
-        Numbers only — describes your mix, not a recommendation.
+        Numbers only. Describes your mix, not a recommendation.
       </p>
       {error && <div className="mb-4 rounded-2xl bg-[var(--surface)] px-5 py-4 text-[12px] text-[var(--amber)]">{error}</div>}
       {!d && !error && <div className="mb-4 h-40 animate-pulse rounded-[20px] bg-[var(--surface)]" />}

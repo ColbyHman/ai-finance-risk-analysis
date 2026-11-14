@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Finance Copilot — AI Research Copilot (POC)",
+  title: "Finance Copilot: AI Research Copilot (POC)",
   description:
     "Proof-of-concept triage inbox for AI-assisted portfolio research. Demo data only.",
 };
