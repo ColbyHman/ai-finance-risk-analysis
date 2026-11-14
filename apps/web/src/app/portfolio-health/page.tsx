@@ -137,7 +137,7 @@ export default function PortfolioHealthPage() {
         <div className="mt-[18px] mb-5">
           <h1 className="m-0 mb-1 text-xl font-bold tracking-tight">Portfolio Health</h1>
           <p className="m-0 max-w-[520px] text-xs text-[var(--ink-dim)]">
-            Set how many units you hold of each tracked security — value and allocation update from a live price lookup.
+            Set how many units you hold of each tracked security. Value and allocation update from a live price lookup.
             Informational only: no cost basis or gain/loss, no buy/sell/hold guidance.
           </p>
         </div>
@@ -161,13 +161,13 @@ export default function PortfolioHealthPage() {
           )}
           <p className="mt-1.5 mb-2.5 text-[11px] text-[var(--ink-faint)]">
             Sum of units × latest price across holdings with a usable price lookup. The change is against each
-            holding&apos;s previous close — not a gain or loss on what you paid.
+            holding&apos;s previous close, not a gain or loss on what you paid.
           </p>
           <MarketStatus session={session} fetchedAt={fetchedAt} />
         </div>
 
         <p className="mb-3 text-[11.5px] font-bold uppercase tracking-[0.06em] text-[var(--ink-faint)]">
-          Holdings — units, price, value, change, allocation
+          Holdings: units, price, value, change, allocation
         </p>
         <div className="mb-5 overflow-hidden rounded-[20px] bg-[var(--surface)]">
           <table className="w-full border-collapse text-[13px]">

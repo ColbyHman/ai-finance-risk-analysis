@@ -100,7 +100,7 @@ export function DividendIncome({
             </p>
           )}
           <p className="m-0 mt-2.5 text-[10.5px] leading-[1.5] text-[var(--ink-faint)]">
-            Payouts recorded over the last 12 months × the units you hold now — what those units would have received, not a forecast.
+            Payouts recorded over the last 12 months × the units you hold now: what those units would have received, not a forecast.
             The source&apos;s history can trail a payout by a few weeks. Data: Yahoo Finance.
           </p>
         </>

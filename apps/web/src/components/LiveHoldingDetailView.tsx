@@ -77,7 +77,7 @@ function AnalysisCard({ analysis, documents }: { analysis: LiveAnalysis; documen
       </div>
       <p className="m-0 mb-3 text-[13.5px] leading-[1.6] text-[var(--ink-dim)]">{analysis.summary}</p>
       <p className="m-0 mb-3 text-[10.5px] text-[var(--ink-faint)]">
-        Materiality (how much this matters, 0–100): {analysis.materiality}/100 — a presentation-layer sense of how
+        Materiality (how much this matters, 0–100): {analysis.materiality}/100. A presentation-layer sense of how
         much attention this deserves, not a buy/sell/hold signal.
       </p>
       {analysis.citations.length > 0 && (
@@ -96,7 +96,7 @@ function AnalysisCard({ analysis, documents }: { analysis: LiveAnalysis; documen
                   >
                     {doc ? doc.title || "Untitled document" : "A fetched document (see list below)"}
                   </a>
-                  {c.excerpt && <span className="text-[var(--ink-faint)]"> — &ldquo;{c.excerpt}&rdquo;</span>}
+                  {c.excerpt && <span className="text-[var(--ink-faint)]">: &ldquo;{c.excerpt}&rdquo;</span>}
                 </li>
               );
             })}
@@ -191,7 +191,7 @@ export function LiveHoldingDetailView({ detail }: { detail: LiveHoldingDetail })
       )}
 
       <div className="mt-[26px] text-center text-[11px] text-[var(--ink-faint)]">
-        Information to help you form your own view — not a recommendation to buy, sell, or hold anything.
+        Information to help you form your own view, not a recommendation to buy, sell, or hold anything.
       </div>
     </div>
   );

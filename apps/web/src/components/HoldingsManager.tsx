@@ -86,7 +86,7 @@ export function HoldingsManager({ holdings, onChanged, quote, changeLabel = "tod
       setTicker("");
       onChanged();
     } catch (err) {
-      setError(err instanceof FinanceApiError ? err.message : "Couldn't add that holding — try again.");
+      setError(err instanceof FinanceApiError ? err.message : "Couldn't add that holding. Try again.");
     } finally {
       setBusy(false);
     }
@@ -99,7 +99,7 @@ export function HoldingsManager({ holdings, onChanged, quote, changeLabel = "tod
       await removeLiveHolding(t);
       onChanged();
     } catch (err) {
-      setError(err instanceof FinanceApiError ? err.message : "Couldn't remove that holding — try again.");
+      setError(err instanceof FinanceApiError ? err.message : "Couldn't remove that holding. Try again.");
     } finally {
       setBusy(false);
     }
@@ -125,13 +125,13 @@ export function HoldingsManager({ holdings, onChanged, quote, changeLabel = "tod
     <div className="mb-3 rounded-[20px] bg-[var(--surface)] px-5 py-[18px]">
       <p className="m-0 mb-1 text-[13.5px] font-bold">Holdings being watched</p>
       <p className="m-0 mb-3 text-[11.5px] leading-[1.5] text-[var(--ink-dim)]">
-        Add or remove a security for the system to track. This only changes what gets checked — it
-        never suggests what to do with a position.
+        Add or remove a security for the system to track. This only changes what gets checked.
+        It never suggests what to do with a position.
       </p>
 
       <div className="mb-3 divide-y divide-[var(--border)] overflow-hidden rounded-xl bg-[var(--surface-2)]">
         {holdings.length === 0 && (
-          <p className="m-0 px-3.5 py-2.5 text-[11.5px] text-[var(--ink-faint)]">No holdings yet — add one below.</p>
+          <p className="m-0 px-3.5 py-2.5 text-[11.5px] text-[var(--ink-faint)]">No holdings yet. Add one below.</p>
         )}
         {holdings.map((h) => {
           const locallyRefreshing = refreshing === h.ticker;

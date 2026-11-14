@@ -30,7 +30,7 @@ export function useMarket(tickers?: string[]) {
       setFetchedAt(new Date());
       return m;
     } catch {
-      setError("Couldn't refresh market data — showing the last prices received.");
+      setError("Couldn't refresh market data. Showing the last prices received.");
       return null;
     }
   }, [key]);
